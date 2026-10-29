@@ -28,7 +28,8 @@ export default async function SessionReport({ params }: PageProps<"/sessions/[id
   const db = await readDb(user.id);
   const job = db.jobs.find((j) => j.id === s.jobId);
   const title = job ? `${job.parsed.title} — ${job.parsed.company}` : "Interview report";
-  const sub = `${fmtDate(s.createdAt)} · ${PERSONAS[s.type].label} · ${s.language.toUpperCase()} · ${s.difficulty} · ${s.lengthMin} min`;
+  const cv = db.resumes.find((r) => r.id === s.resumeId);
+  const sub = `${fmtDate(s.createdAt)} · ${PERSONAS[s.type].label} · ${s.language.toUpperCase()} · ${s.difficulty} · ${s.lengthMin} min · ${cv ? cv.label : "No CV"}`;
 
   if (s.status === "analyzing") {
     return (

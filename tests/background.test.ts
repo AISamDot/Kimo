@@ -96,5 +96,6 @@ describe("general company interviews", () => {
     expect(j.parsed.company).toBe("DHL Group");
     expect(j.parsed.competencies.length).toBeGreaterThan(3);
     expect(generalJob("nope", "planner", "x")).toBeNull();
+    expect(generalJob("any", "analyst", "job_2")?.general?.companyId).toBe("any");
   });
 });

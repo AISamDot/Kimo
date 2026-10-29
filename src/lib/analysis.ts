@@ -105,8 +105,8 @@ async function runAnalysis(uid: string, sessionId: string) {
   if (!s) throw new Error("Session not found");
   const db = await readDb(uid);
   const job = db.jobs.find((j) => j.id === s.jobId);
-  const resume = db.resumes.find((r) => r.id === s.resumeId);
-  if (!job || !resume) throw new Error("The job ad or CV for this session was deleted.");
+  const resume = db.resumes.find((r) => r.id === s.resumeId) ?? null; // optional: interviews work without a CV
+  if (!job) throw new Error("The job ad or company track for this session was deleted.");
   const notes: string[] = [];
 
   // 1. Content: one scoring call per question thread.

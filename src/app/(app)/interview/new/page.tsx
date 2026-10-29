@@ -1,5 +1,5 @@
 import { InterviewSetup } from "@/components/InterviewSetup";
-import { Card, Empty, PageHeader } from "@/components/ui";
+import { Card, LinkButton, PageHeader } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { getSettings, readDb } from "@/lib/store";
 
@@ -8,10 +8,10 @@ export default async function NewInterview({ searchParams }: PageProps<"/intervi
   const db = await readDb(user.id);
   const sp = await searchParams;
   const s = await getSettings();
-  if (!db.resumes.length) return <Empty title="Upload your CV first" href="/cv" cta="Go to CV">The interviewer asks about your real experience, so it needs your CV.</Empty>;
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Practise" title="Mock interview" sub="A live two-way interview by voice, tailored to your CV and either a real job ad or one of 20 leading logistics and supply-chain companies. You get a scored report afterwards." />
+      <PageHeader eyebrow="Practise" title="Mock interview" sub="A live two-way interview by voice. Start any time: pick a real job ad, one of 20 leading logistics and supply-chain companies, or just go. Your CV is optional. Every interview is saved with its full report in the Interview log."
+        action={<LinkButton href="/sessions" variant="ghost" icon="chat">Interview log ({db.sessions.length})</LinkButton>} />
       <Card>
         <InterviewSetup
           jobs={[...db.jobs].filter((j) => !j.general).reverse().map((j) => ({ id: j.id, label: `${j.parsed.title} — ${j.parsed.company}` }))}

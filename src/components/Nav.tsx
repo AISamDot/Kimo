@@ -22,6 +22,7 @@ const GROUPS: { label: string; links: { href: string; label: string; icon: IconN
     label: "Practise",
     links: [
       { href: "/interview/new", label: "Mock interview", icon: "mic" },
+      { href: "/sessions", label: "Interview log", icon: "chat" },
       { href: "/practice", label: "Quick drills", icon: "bolt" },
       { href: "/german", label: "German trainer", icon: "globe" },
     ],

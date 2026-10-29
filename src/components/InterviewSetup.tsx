@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { COMPANIES, GENERAL_ROLES } from "@/lib/companies";
+import { ANY_COMPANY, COMPANIES, GENERAL_ROLES } from "@/lib/companies";
 import { api, Button, ErrorNote } from "./client";
 
 const TYPES = [
@@ -27,9 +27,9 @@ export function InterviewSetup({
   hasKey: boolean;
 }) {
   const router = useRouter();
-  const [mode, setMode] = useState<"company" | "job">(defaultJob || (jobs.length && !defaultCompany) ? "job" : "company");
+  const [mode, setMode] = useState<"company" | "job">(defaultJob ? "job" : "company");
   const [jobId, setJobId] = useState(defaultJob ?? jobs[0]?.id ?? "");
-  const [companyId, setCompanyId] = useState(defaultCompany ?? "");
+  const [companyId, setCompanyId] = useState(defaultCompany ?? ANY_COMPANY.id);
   const [roleId, setRoleId] = useState<string>("analyst");
   const [resumeId, setResumeId] = useState(resumes[0]?.id ?? "");
   const [type, setType] = useState<string>("hr");
@@ -67,7 +67,7 @@ export function InterviewSetup({
       <div>
         <div className="mb-2 text-sm">Interview for</div>
         {seg(mode, setMode, [
-          ["company", "A top company (no ad needed)"],
+          ["company", "General or top company"],
           ["job", `A job ad${jobs.length ? ` (${jobs.length})` : ""}`],
         ])}
       </div>
@@ -75,7 +75,7 @@ export function InterviewSetup({
       {mode === "company" && (
         <div className="space-y-3">
           <div className="grid max-h-80 grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
-            {COMPANIES.map((c) => (
+            {[ANY_COMPANY, ...COMPANIES].map((c) => (
               <button
                 key={c.id}
                 onClick={() => setCompanyId(c.id)}
@@ -86,12 +86,14 @@ export function InterviewSetup({
               </button>
             ))}
           </div>
-          {companyId && (
-            <p className="rounded-xl bg-surface-2 px-3 py-2 text-xs text-muted">
-              <b className="text-ink">{COMPANIES.find((c) => c.id === companyId)?.name}:</b> {COMPANIES.find((c) => c.id === companyId)?.about} The interviewer plays someone from this company and will probe:{" "}
-              {COMPANIES.find((c) => c.id === companyId)?.focus}
-            </p>
-          )}
+          {(() => {
+            const c = [ANY_COMPANY, ...COMPANIES].find((x) => x.id === companyId);
+            return c ? (
+              <p className="rounded-xl bg-surface-2 px-3 py-2 text-xs text-muted">
+                <b className="text-ink">{c.name}:</b> {c.about} The interviewer will probe: {c.focus}
+              </p>
+            ) : null;
+          })()}
         </div>
       )}
 
@@ -131,6 +133,7 @@ export function InterviewSetup({
                 {r.label}
               </option>
             ))}
+            <option value="">No CV (the interviewer asks about your background)</option>
           </select>
         </label>
       </div>
@@ -186,7 +189,7 @@ export function InterviewSetup({
 
       <ErrorNote text={err} />
       {!hasKey && <p className="text-sm text-warn">A Claude API key is needed. Add it on the Integrations page.</p>}
-      <Button onClick={start} busy={busy} disabled={(mode === "job" ? !jobId : !companyId) || !resumeId || !hasKey}>
+      <Button onClick={start} busy={busy} disabled={(mode === "job" && !jobId) || !hasKey}>
         {busy ? "Preparing your interviewer… (20–40 s)" : "Prepare interview"}
       </Button>
     </div>

@@ -16,13 +16,15 @@ export const POST = handle(async (req: Request) => {
   const b = (await req.json()) as {
     jobId?: string;
     general?: { companyId: string; roleId: string };
-    resumeId: string;
+    resumeId?: string;
     type: InterviewType;
     language: InterviewLanguage;
     difficulty: Difficulty;
     lengthMin: number;
   };
   let db = await readDb(u.id);
+  // No restrictions: with neither a job ad nor a company, run a general interview.
+  if (!b.jobId && !b.general) b.general = { companyId: "any", roleId: "analyst" };
   if (b.general) {
     // General company interview: reuse (or create) the practice track for this company + role.
     const { companyId, roleId } = b.general;
@@ -39,9 +41,8 @@ export const POST = handle(async (req: Request) => {
     }
   }
   const job = db.jobs.find((j) => j.id === b.jobId);
-  const resume = db.resumes.find((r) => r.id === b.resumeId);
+  const resume = b.resumeId ? (db.resumes.find((r) => r.id === b.resumeId) ?? null) : null; // CV is optional
   if (!job) throw new Error("Pick a job ad or a company first.");
-  if (!resume) throw new Error("Upload a CV first.");
   const type = TYPES.includes(b.type) ? b.type : "hr";
   const language: InterviewLanguage = type === "german" ? "de" : ["en", "de", "mixed"].includes(b.language) ? b.language : "en";
   const difficulty: Difficulty = ["friendly", "realistic", "tough"].includes(b.difficulty) ? b.difficulty : "realistic";
@@ -59,14 +60,14 @@ export const POST = handle(async (req: Request) => {
     .map(([k, v]) => [k, v.slice(-2).reduce((a, x) => a + x, 0) / Math.min(2, v.length)] as const)
     .filter(([, v]) => v < 3.5)
     .map(([k]) => k);
-  const review = db.jobReviews.find((r) => r.jobId === job.id && r.resumeId === resume.id) ?? null;
+  const review = (resume && db.jobReviews.find((r) => r.jobId === job.id && r.resumeId === resume.id)) || null;
 
   const plan = await planSession({ job, resume, profile: db.profile, review, type, language, difficulty, lengthMin, askedBefore, weakCompetencies: weak, stories: db.stories });
   const first = plan.questions[0];
   const session: SessionDetail = {
     id: newId("ses"),
     jobId: job.id,
-    resumeId: resume.id,
+    resumeId: resume?.id ?? "",
     type,
     language,
     difficulty,

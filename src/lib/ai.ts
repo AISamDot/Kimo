@@ -36,13 +36,16 @@ function profileText(p: Profile) {
   return rows.length ? rows.map(([k, v]) => `${k}: ${v}`).join("\n") : "(profile not filled in)";
 }
 
-function resumeBrief(r: Resume) {
+function resumeBrief(r: Resume | null | undefined) {
+  if (!r) return "CV: none uploaded for this session. Learn his background from his answers (and the profile below); do not refer to a CV.";
   return `CV (version ${r.version}):\n${JSON.stringify(r.parsed)}`;
 }
 
 function jobBrief(j: Job) {
   if (j.general)
-    return `GENERAL COMPANY INTERVIEW (there is no specific job ad):\n${j.rawText}\n\nYou are an interviewer at ${j.parsed.company} hiring for an entry-level ${j.parsed.title.replace(" (general)", "")} role in Germany. Stay in character as someone from ${j.parsed.company}: reflect its business, scale and what it values, and ask why ${j.parsed.company} specifically. Use only well-known public facts about the company; never invent internal details, numbers or named people.`;
+    return j.general.companyId === "any"
+      ? `GENERAL INTERVIEW (no specific job ad or company):\n${j.rawText}\n\nYou are an interviewer at a typical mid-to-large company in Germany (invent a plausible company name in its sector and keep it consistent) hiring for an entry-level ${j.parsed.title.replace(" (general)", "")} role.`
+      : `GENERAL COMPANY INTERVIEW (there is no specific job ad):\n${j.rawText}\n\nYou are an interviewer at ${j.parsed.company} hiring for an entry-level ${j.parsed.title.replace(" (general)", "")} role in Germany. Stay in character as someone from ${j.parsed.company}: reflect its business, scale and what it values, and ask why ${j.parsed.company} specifically. Use only well-known public facts about the company; never invent internal details, numbers or named people.`;
   return `JOB AD (structured):\n${JSON.stringify(j.parsed)}\n\nJOB AD (raw, truncated):\n${j.rawText.slice(0, 6000)}`;
 }
 
@@ -249,7 +252,7 @@ const SessionPlanZ = z.object({
 
 export async function planSession(args: {
   job: Job;
-  resume: Resume;
+  resume: Resume | null;
   profile: Profile;
   review: JobReview | null;
   type: InterviewType;
@@ -296,7 +299,7 @@ About 60% new questions and 40% re-tests when history exists.
 CORE BANK (use as inspiration; always rephrase and personalise to his CV and this ad):
 ${QUESTION_BANK.map((q) => `- [${q.competency}/${q.kind}] ${q.en}`).join("\n")}
 
-Rules: ground questions in HIS actual CV ("You wrote that you… walk me through how") and THIS ad. Questions must be what a real ${persona.label.toLowerCase()} interviewer in Germany would ask. Number questions from 1. The opening line must greet him by first name if known, introduce the interviewer (invent a plausible German name and title), and ask question 1.`,
+Rules: ${args.resume ? `ground questions in HIS actual CV ("You wrote that you… walk me through how") and THIS ad.` : `there is no CV: open with "walk me through your background", then build follow-ups on what he says, and ground the rest in THIS role.`} Questions must be what a real ${persona.label.toLowerCase()} interviewer in Germany would ask. Number questions from 1. The opening line must greet him by first name if known, introduce the interviewer (invent a plausible German name and title), and ask question 1.`,
   });
 }
 
@@ -391,7 +394,7 @@ export async function scoreAnswer(args: {
   kind: string;
   thread: Turn[];
   job?: Job;
-  resume: Resume;
+  resume: Resume | null;
   stories?: Story[];
 }) {
   return llmJson(AnswerScoreZ, {

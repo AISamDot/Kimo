@@ -12,6 +12,17 @@ export interface Company {
   focus: string;
 }
 
+/** Default for a no-setup interview: a typical employer, no specific company. */
+export const ANY_COMPANY: Company = {
+  id: "any",
+  name: "Any employer",
+  kind: "General supply-chain interview",
+  hq: "Germany",
+  germany: "A typical mid-to-large company hiring in Germany",
+  about: "A typical mid-to-large company hiring for supply-chain, logistics and operations roles in Germany.",
+  focus: "Motivation, CV walkthrough, core supply-chain knowledge, behavioural examples, visa, salary and start date.",
+};
+
 export const COMPANIES: Company[] = [
   { id: "dhl", name: "DHL Group", kind: "Logistics provider", hq: "Bonn, Germany", germany: "Headquarters; sites across Germany", about: "The world's largest logistics company: express, freight forwarding, contract logistics (DHL Supply Chain), e-commerce and German post & parcel.", focus: "Operational excellence, warehouse and network KPIs, customer focus, working across divisions and countries." },
   { id: "kuehne-nagel", name: "Kuehne+Nagel", kind: "Freight forwarder", hq: "Schindellegi, Switzerland", germany: "Founded in Bremen; large Hamburg and Bremen operations", about: "One of the largest sea and air freight forwarders, also road logistics and contract logistics.", focus: "Sea/air freight basics, Incoterms, customs, rates and margins, customer service under pressure." },
@@ -47,7 +58,7 @@ export type GeneralRoleId = (typeof GENERAL_ROLES)[number]["id"];
 
 /** A reusable practice track for "general interview at <company> for <role>" — shaped like a job ad. */
 export function generalJob(companyId: string, roleId: string, id: string): Job | null {
-  const c = COMPANIES.find((x) => x.id === companyId);
+  const c = companyId === ANY_COMPANY.id ? ANY_COMPANY : COMPANIES.find((x) => x.id === companyId);
   const r = GENERAL_ROLES.find((x) => x.id === roleId);
   if (!c || !r) return null;
   return {
