@@ -90,7 +90,10 @@ let sqlPromise: Promise<Sql> | null = null;
 function pg(): Promise<Sql> {
   sqlPromise ??= (async () => {
     const postgres = (await import("postgres")).default;
-    const sql = postgres(process.env.DATABASE_URL!, { max: 3, prepare: false, idle_timeout: 20, onnotice: () => undefined });
+    const url = process.env.DATABASE_URL!;
+    // Hosted databases (Supabase, Neon…) get TLS; a local Postgres usually has none.
+    const local = /@(localhost|127\.0\.0\.1|\[::1\])[:/]/.test(url) || /sslmode=disable/.test(url);
+    const sql = postgres(url, { max: 3, prepare: false, idle_timeout: 20, onnotice: () => undefined, ssl: local ? false : "require" });
     await sql`create table if not exists buddy_kv (key text primary key, value jsonb not null, updated_at timestamptz not null default now())`;
     await sql`create table if not exists buddy_blobs (key text primary key, data bytea not null, created_at timestamptz not null default now())`;
     return sql;
