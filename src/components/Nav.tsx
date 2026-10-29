@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "./client";
+import { BrandMark } from "./BrandMark";
 import { Icon, type IconName } from "./ui";
 
 const GROUPS: { label: string; links: { href: string; label: string; icon: IconName }[] }[] = [
@@ -46,9 +47,7 @@ const GROUPS: { label: string; links: { href: string; label: string; icon: IconN
 function Logo({ small = false }: { small?: boolean }) {
   return (
     <span className="flex items-center gap-2.5">
-      <span className={`flex items-center justify-center rounded-xl bg-gradient-to-br from-[#12a07f] to-[#e59a2f] text-white shadow-lift ${small ? "h-8 w-8" : "h-9 w-9"}`}>
-        <Icon name="mic" className="h-4.5 w-4.5" />
-      </span>
+      <BrandMark className={`shrink-0 drop-shadow-[0_4px_12px_rgba(229,154,47,0.25)] ${small ? "h-8 w-8" : "h-10 w-10"}`} />
       <span className="leading-tight">
         <span className="block font-serif text-lg font-semibold tracking-tight">Kimo</span>
         {!small && <span className="block text-[11px] text-side-muted">Interview buddy · supply chain</span>}

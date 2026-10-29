@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api, Button, ErrorNote } from "./client";
+import { BrandMark } from "./BrandMark";
 import { Icon, type IconName } from "./ui";
 
 export function AuthForm({ mode, firstUser, signupsOpen }: { mode: "login" | "signup"; firstUser: boolean; signupsOpen: boolean }) {
@@ -31,9 +32,7 @@ export function AuthForm({ mode, firstUser, signupsOpen }: { mode: "login" | "si
     <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
       <aside className="hero relative hidden flex-col justify-between overflow-hidden p-10 lg:flex">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#12a07f] to-[#e59a2f] shadow-lift">
-            <Icon name="mic" className="h-5 w-5" />
-          </span>
+          <BrandMark className="h-11 w-11" />
           <span className="font-serif text-2xl font-semibold">Kimo</span>
         </div>
         <div>
@@ -64,9 +63,7 @@ export function AuthForm({ mode, firstUser, signupsOpen }: { mode: "login" | "si
         <div className="w-full max-w-sm">
           <div className="mb-8 text-center lg:text-left">
             <div className="mb-4 flex justify-center lg:hidden">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#12a07f] to-[#e59a2f] text-white shadow-lift">
-                <Icon name="mic" className="h-6 w-6" />
-              </span>
+              <BrandMark className="h-14 w-14 drop-shadow-lg" />
             </div>
             <h2 className="font-serif text-3xl font-semibold">{signup ? "Create your account" : "Welcome back"}</h2>
             <p className="mt-1 text-sm text-muted">{signup ? "Start practising in two minutes." : "Log in to keep practising."}</p>
