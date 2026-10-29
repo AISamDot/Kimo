@@ -19,6 +19,8 @@ A private web app for practising supply-chain job interviews in Germany (in Engl
 
 The product spec is in [docs/PRD.md](docs/PRD.md).
 
+> Working on the code? Start with [docs/HANDOFF.md](docs/HANDOFF.md): infra, feature map, conventions and open items.
+
 ## Run it locally
 
 Requires Node 20.9+.
