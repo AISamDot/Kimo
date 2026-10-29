@@ -32,10 +32,9 @@ export function DebriefForm({ apps }: { apps: { id: string; label: string }[] })
     setBusy(true);
     setErr("");
     try {
-      await api("/api/debriefs", { body: { ...f, questions: qs } });
+      await api("/api/debriefs", { body: { ...f, questions: qs } }); // analysed in the background
       setOpen(false);
       setQs([{ q: "", myAnswer: "" }]);
-      router.refresh();
     } catch (e) {
       setErr((e as Error).message);
     } finally {

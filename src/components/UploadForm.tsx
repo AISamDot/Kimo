@@ -1,21 +1,18 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api, Button, ErrorNote } from "./client";
+import { RunningNote } from "./TaskTray";
 
 export function UploadForm({
   endpoint,
   kind,
   allowUrl,
-  redirectBase,
 }: {
   endpoint: string;
   kind: "cv" | "job";
   allowUrl?: boolean;
-  redirectBase: string;
 }) {
-  const router = useRouter();
   const [mode, setMode] = useState<"file" | "text" | "url">("file");
   const [file, setFile] = useState<File | null>(null);
   const [text, setText] = useState("");
@@ -32,13 +29,12 @@ export function UploadForm({
     if (mode === "url") fd.append("url", url);
     if (label) fd.append("label", label);
     try {
-      const r = await api<{ resume?: { id: string }; job?: { id: string } }>(endpoint, { form: fd });
-      const id = r.resume?.id ?? r.job?.id;
+      // The server reads it with Claude in the background; the task tray shows progress.
+      await api(endpoint, { form: fd });
       setFile(null);
       setText("");
       setUrl("");
-      router.push(kind === "cv" ? `${redirectBase}?id=${id}` : `${redirectBase}/${id}`);
-      router.refresh();
+      setLabel("");
     } catch (e) {
       setErr((e as Error).message);
     } finally {
@@ -71,8 +67,11 @@ export function UploadForm({
       {mode === "url" && <input className="field" placeholder="https://… link to the job ad" value={url} onChange={(e) => setUrl(e.target.value)} />}
       {kind === "cv" && <input className="field" placeholder="Label (optional), e.g. 'German version' or 'after review'" value={label} onChange={(e) => setLabel(e.target.value)} />}
       <ErrorNote text={err} />
+      <RunningNote kinds={[kind === "cv" ? "cv-read" : "job-read"]}>
+        {kind === "cv" ? "Takes about a minute. Then Kimo re-ranks job matches against it. You can leave this page." : "Takes about a minute. You can leave this page."}
+      </RunningNote>
       <Button onClick={submit} busy={busy} disabled={(mode === "file" && !file) || (mode === "text" && text.length < 80) || (mode === "url" && !url)}>
-        {busy ? "Reading with Claude… (up to a minute)" : kind === "cv" ? "Add CV" : "Add job ad"}
+        {busy ? "Uploading…" : kind === "cv" ? "Add CV" : "Add job ad"}
       </Button>
     </div>
   );

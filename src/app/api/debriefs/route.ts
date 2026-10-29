@@ -2,6 +2,7 @@ import { assessDebrief } from "@/lib/ai";
 import { handle, json } from "@/lib/api";
 import { apiUser } from "@/lib/auth";
 import { newId, readDb, updateDb } from "@/lib/store";
+import { startTask } from "@/lib/tasks";
 import { STAGES, type Debrief, type Stage } from "@/lib/types";
 
 export const maxDuration = 300;
@@ -30,15 +31,18 @@ export const POST = handle(async (req: Request) => {
   const app = db.applications.find((a) => a.id === input.applicationId);
   const job = app && db.jobs.find((j) => j.id === app.jobId);
   const resume = (app && db.resumes.find((r) => r.id === app.resumeId)) ?? [...db.resumes].sort((a, c) => c.version - a.version)[0];
-  const result = await assessDebrief({ debrief: input, app, job, resume, stories: db.stories });
-  const debrief: Debrief = { ...input, id: newId("dbf"), createdAt: new Date().toISOString(), result };
-  await updateDb(u.id, (d) => {
-    d.debriefs.push(debrief);
-    // Keep the application's stage in step with what he logged.
-    const a = d.applications.find((x) => x.id === input.applicationId);
-    if (a && STAGES.indexOf(input.stage) > STAGES.indexOf(a.stage)) a.stage = input.stage;
+  const id = newId("dbf");
+  const task = await startTask(u.id, { key: `debrief:${id}`, kind: "debrief", label: `Analysing your ${job?.parsed.company || ""} interview`.replace("  ", " "), href: "/debrief" }, async () => {
+    const result = await assessDebrief({ debrief: input, app, job, resume, stories: db.stories });
+    const debrief: Debrief = { ...input, id, createdAt: new Date().toISOString(), result };
+    await updateDb(u.id, (d) => {
+      d.debriefs.push(debrief);
+      // Keep the application's stage in step with what he logged.
+      const a = d.applications.find((x) => x.id === input.applicationId);
+      if (a && STAGES.indexOf(input.stage) > STAGES.indexOf(a.stage)) a.stage = input.stage;
+    });
   });
-  return json({ id: debrief.id });
+  return json({ task });
 });
 
 export const DELETE = handle(async (req: Request) => {

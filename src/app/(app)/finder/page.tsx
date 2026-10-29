@@ -14,7 +14,7 @@ export default async function FinderPage() {
       <PageHeader
         eyebrow="Prepare"
         title="Job finder"
-        sub="Live supply-chain openings in Germany, ranked against your CV, German level and target cities. Scoring is free and instant; the deeper Claude check is one click per job."
+        sub="Live operations, supply-chain and logistics openings in Germany (and, with Apify, Europe, the GCC, Asia and Africa), ranked against your CV. Scoring is free and instant; the deeper Claude check is one click per job."
       />
       <FinderView
         finder={db.finder}
@@ -22,6 +22,7 @@ export default async function FinderPage() {
         germanLevel={db.profile.germanLevel}
         targetCities={db.profile.targetCities}
         hasAdzuna={!!(keys.adzunaAppId && keys.adzunaAppKey)}
+        hasApify={!!keys.apify}
       />
     </div>
   );

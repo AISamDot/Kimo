@@ -1,8 +1,10 @@
 import { parseJob } from "@/lib/ai";
 import { handle, json } from "@/lib/api";
 import { apiUser } from "@/lib/auth";
-import { aiFitCheck, runFinder } from "@/lib/finder";
+import { aiFitCheck, FINDER_TASK, refreshFinder } from "@/lib/finder";
+import { isRegionId } from "@/lib/regions";
 import { newId, readDb, updateDb } from "@/lib/store";
+import { startTask } from "@/lib/tasks";
 import type { FinderPrefs, FoundJob, Job } from "@/lib/types";
 
 export const maxDuration = 300;
@@ -31,19 +33,17 @@ export const POST = handle(async (req: Request) => {
         remoteOnly: typeof p.remoteOnly === "boolean" ? p.remoteOnly : cur.remoteOnly,
         entryLevelOnly: typeof p.entryLevelOnly === "boolean" ? p.entryLevelOnly : cur.entryLevelOnly,
         minScore: Number.isFinite(p.minScore) ? Math.min(90, Math.max(0, Math.round(p.minScore!))) : cur.minScore,
+        regions: Array.isArray(p.regions) ? (p.regions.filter(isRegionId) as FinderPrefs["regions"]) : cur.regions,
       };
     });
     return json({ ok: true });
   }
 
   if (b.action === "run") {
-    const { results, note } = await runFinder({ prefs: db.finder.prefs, existing: db.finder.results, resume: latestCv, profile: db.profile });
-    await updateDb(u.id, (d) => {
-      d.finder.results = results;
-      d.finder.lastRun = new Date().toISOString();
-      d.finder.lastRunNote = note;
+    const task = await startTask(u.id, FINDER_TASK, async () => {
+      await refreshFinder(u.id);
     });
-    return json({ note });
+    return json({ task });
   }
 
   const found = db.finder.results.find((j) => j.id === b.id);
@@ -60,27 +60,32 @@ export const POST = handle(async (req: Request) => {
 
   if (b.action === "ai") {
     if (!latestCv) throw new Error("Upload your CV first.");
-    const ai = await aiFitCheck(found, latestCv, db.profile);
-    await updateDb(u.id, (d) => {
-      const j = d.finder.results.find((x) => x.id === b.id);
-      if (j) j.ai = ai;
+    const task = await startTask(u.id, { key: `finderai:${found.id}`, kind: "finder-ai", label: `Fit check: ${found.title}`, href: "/finder" }, async () => {
+      const ai = await aiFitCheck(found, latestCv, db.profile);
+      await updateDb(u.id, (d) => {
+        const j = d.finder.results.find((x) => x.id === b.id);
+        if (j) j.ai = ai;
+      });
     });
-    return json({ ai });
+    return json({ task });
   }
 
   if (b.action === "import") {
     if (found.jobId && db.jobs.some((j) => j.id === found.jobId)) return json({ jobId: found.jobId });
-    const { parsed, text } = await parseJob({ text: `${found.title}\n${found.company} · ${found.location}\n\n${found.description}` });
-    const job: Job = { id: newId("job"), createdAt: new Date().toISOString(), source: "url", url: found.url, rawText: text, parsed };
-    await updateDb(u.id, (d) => {
-      d.jobs.push(job);
-      const j = d.finder.results.find((x) => x.id === b.id);
-      if (j) {
-        j.status = "imported";
-        j.jobId = job.id;
-      }
+    const id = newId("job");
+    const task = await startTask(u.id, { key: `finderimport:${found.id}`, kind: "finder-import", label: `Adding ${found.title} to your job ads`, href: `/jobs/${id}` }, async () => {
+      const { parsed, text } = await parseJob({ text: `${found.title}\n${found.company} · ${found.location}\n\n${found.description}` });
+      const job: Job = { id, createdAt: new Date().toISOString(), source: "url", url: found.url, rawText: text, parsed };
+      await updateDb(u.id, (d) => {
+        d.jobs.push(job);
+        const j = d.finder.results.find((x) => x.id === b.id);
+        if (j) {
+          j.status = "imported";
+          j.jobId = job.id;
+        }
+      });
     });
-    return json({ jobId: job.id });
+    return json({ task });
   }
   throw new Error("Unknown action");
 });

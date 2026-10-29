@@ -166,6 +166,7 @@ export const DEFAULT_SETTINGS: Settings = {
     tavus: "",
     adzunaAppId: "",
     adzunaAppKey: "",
+    apify: "",
   },
   models: { interviewer: "claude-opus-5-5", analysis: "claude-opus-5-5", verdict: "claude-opus-5-5" },
   effort: { interviewer: "low", analysis: "medium", verdict: "high" },
@@ -202,17 +203,19 @@ export const DEFAULT_PROFILE: Profile = {
 };
 
 export const DEFAULT_FINDER_PREFS: FinderPrefs = {
-  keywords: "supply chain, logistics, procurement, demand planning, Einkauf, Logistik, Disposition",
+  keywords: "supply chain, logistics, procurement, demand planning, operations, Einkauf, Logistik, Disposition",
   cities: "",
   includeRemote: true,
   remoteOnly: false,
   entryLevelOnly: true,
   minScore: 45,
+  regions: ["germany"],
 };
 
 const emptyUserDb = (): UserDb => ({
   profile: DEFAULT_PROFILE,
   finder: { prefs: DEFAULT_FINDER_PREFS, lastRun: "", lastRunNote: "", results: [] },
+  tasks: [],
   stories: [],
   attempts: [],
   debriefs: [],

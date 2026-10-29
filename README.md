@@ -36,6 +36,12 @@ Use Chrome or Edge for the free browser speech recognition. Microphone and camer
 
 Local files don't persist on Vercel, so set `DATABASE_URL` to a Postgres database (for example Supabase's transaction pooler URL, port 6543). The app creates its two tables (`buddy_kv`, `buddy_blobs`) on first use. Everything else, including the API keys, is configured in the app itself.
 
+Also set `CRON_SECRET` (any long random string). Vercel Cron (`vercel.json`) calls `/api/cron/finder` daily at 05:00 UTC to refresh job matches; the job finder also refreshes on any visit when results are over a day old, and right after a new CV is read.
+
+Slow Claude work (reading a CV or job ad, reviews, prep packs, story drafting, debriefs, diagnosis, finder fit checks) runs as a background task after the response is sent. The task tray (bottom right) tracks it across pages; results appear when done.
+
+Job sources: Arbeitnow (free, Germany), Adzuna (free key, Germany) and, optionally, Apify (paid): LinkedIn + Indeed, country by country for the regions chosen in the finder (Germany, rest of Europe, GCC, Asia, Africa), at most once a day, about 400 jobs per source split across countries.
+
 ## Accounts
 
 Sign-up and login use email and password. Passwords are hashed with scrypt, sessions use httpOnly cookies, and each user's data is kept separate. The admin manages integrations and can close sign-ups.

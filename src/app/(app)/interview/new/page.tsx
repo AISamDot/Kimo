@@ -9,15 +9,15 @@ export default async function NewInterview({ searchParams }: PageProps<"/intervi
   const sp = await searchParams;
   const s = await getSettings();
   if (!db.resumes.length) return <Empty title="Upload your CV first" href="/cv" cta="Go to CV">The interviewer asks about your real experience, so it needs your CV.</Empty>;
-  if (!db.jobs.length) return <Empty title="Add a job ad first" href="/jobs" cta="Add a job ad">Interviews are tailored to a specific job ad.</Empty>;
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Practise" title="Mock interview" sub="A live two-way interview by voice, tailored to the job ad and your CV. You get a scored report afterwards." />
+      <PageHeader eyebrow="Practise" title="Mock interview" sub="A live two-way interview by voice, tailored to your CV and either a real job ad or one of 20 leading logistics and supply-chain companies. You get a scored report afterwards." />
       <Card>
         <InterviewSetup
-          jobs={[...db.jobs].reverse().map((j) => ({ id: j.id, label: `${j.parsed.title} — ${j.parsed.company}` }))}
+          jobs={[...db.jobs].filter((j) => !j.general).reverse().map((j) => ({ id: j.id, label: `${j.parsed.title} — ${j.parsed.company}` }))}
           resumes={[...db.resumes].sort((a, b) => b.version - a.version).map((r) => ({ id: r.id, label: r.label }))}
-          defaultJob={typeof sp.job === "string" ? sp.job : undefined}
+          defaultJob={typeof sp.job === "string" && !db.jobs.find((j) => j.id === sp.job)?.general ? sp.job : undefined}
+          defaultCompany={typeof sp.job === "string" ? db.jobs.find((j) => j.id === sp.job)?.general?.companyId : typeof sp.company === "string" ? sp.company : undefined}
           hasKey={!!s.keys.anthropic}
         />
       </Card>

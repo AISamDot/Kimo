@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { apifyDailyCost } from "@/lib/apify";
+import { REGIONS, REGION_IDS } from "@/lib/regions";
 import type { Finder, FoundJob } from "@/lib/types";
 import { api, Button, ErrorNote } from "./client";
+import { useTasks } from "./TaskTray";
 import { Icon, Pill, ScoreRing } from "./ui";
 
 type Tab = "new" | "saved" | "imported" | "dismissed";
@@ -20,7 +23,21 @@ function ago(iso: string) {
   return d <= 0 ? "today" : d === 1 ? "yesterday" : `${d} days ago`;
 }
 
-export function FinderView({ finder, hasCv, germanLevel, targetCities, hasAdzuna }: { finder: Finder; hasCv: boolean; germanLevel: string; targetCities: string; hasAdzuna: boolean }) {
+export function FinderView({
+  finder,
+  hasCv,
+  germanLevel,
+  targetCities,
+  hasAdzuna,
+  hasApify,
+}: {
+  finder: Finder;
+  hasCv: boolean;
+  germanLevel: string;
+  targetCities: string;
+  hasAdzuna: boolean;
+  hasApify: boolean;
+}) {
   const router = useRouter();
   const [prefs, setPrefs] = useState(finder.prefs);
   const [busy, setBusy] = useState("");
@@ -29,6 +46,9 @@ export function FinderView({ finder, hasCv, germanLevel, targetCities, hasAdzuna
   const [q, setQ] = useState("");
   const [openId, setOpenId] = useState("");
   const [remoteView, setRemoteView] = useState(false);
+  // Searches, fit checks and imports run as background tasks; buttons follow the task, not the request.
+  const running = new Set(useTasks().filter((t) => t.status === "running").map((t) => t.key));
+  const searching = running.has("finder:run");
 
   const counts = useMemo(() => {
     const c = { new: 0, saved: 0, imported: 0, dismissed: 0 } as Record<Tab, number>;
@@ -41,12 +61,11 @@ export function FinderView({ finder, hasCv, germanLevel, targetCities, hasAdzuna
     .filter((j) => !remoteView || j.remote)
     .sort((a, b) => (b.ai?.score ?? b.fit.score) - (a.ai?.score ?? a.fit.score));
 
-  const call = async (label: string, body: unknown, after?: (r: Record<string, unknown>) => void) => {
+  const call = async (label: string, body: unknown) => {
     setBusy(label);
     setErr("");
     try {
-      const r = await api<Record<string, unknown>>("/api/finder", { body });
-      after?.(r);
+      await api("/api/finder", { body });
       router.refresh();
     } catch (e) {
       setErr((e as Error).message);
@@ -78,6 +97,30 @@ export function FinderView({ finder, hasCv, germanLevel, targetCities, hasAdzuna
               Minimum fit score: <b className="text-white">{prefs.minScore}</b>
               <input type="range" min={0} max={80} step={5} className="mt-3 w-full accent-[#e59a2f]" value={prefs.minScore} onChange={(e) => setPrefs({ ...prefs, minScore: Number(e.target.value) })} />
             </label>
+            <div className="sm:col-span-2 lg:col-span-3">
+              <div className="text-xs font-medium text-white/75">Regions</div>
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {REGION_IDS.map((r) => {
+                  const on = prefs.regions.includes(r);
+                  return (
+                    <button
+                      key={r}
+                      onClick={() => setPrefs({ ...prefs, regions: on ? prefs.regions.filter((x) => x !== r) : [...prefs.regions, r] })}
+                      className={`rounded-full border px-3 py-1 text-sm transition ${on ? "border-[#e59a2f] bg-[#e59a2f] text-[#0f2a24]" : "border-white/30 text-white/85 hover:bg-white/10"}`}
+                    >
+                      {REGIONS[r].label}
+                    </button>
+                  );
+                })}
+              </div>
+              {prefs.regions.some((r) => r !== "germany") && (
+                <p className="mt-1.5 text-xs text-white/70">
+                  {hasApify
+                    ? `Outside Germany, jobs come from LinkedIn + Indeed via Apify, once a day (about $${apifyDailyCost(prefs.regions).toFixed(2)} per day for these regions).`
+                    : "Outside Germany needs an Apify token on Integrations (LinkedIn + Indeed, paid per job)."}
+                </p>
+              )}
+            </div>
             <div className="flex flex-wrap gap-4 text-sm text-white/90 sm:col-span-2 lg:col-span-3">
               <label className="flex items-center gap-2">
                 <input type="checkbox" className="accent-[#e59a2f]" checked={prefs.entryLevelOnly} onChange={(e) => setPrefs({ ...prefs, entryLevelOnly: e.target.checked })} />
@@ -94,11 +137,16 @@ export function FinderView({ finder, hasCv, germanLevel, targetCities, hasAdzuna
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={search} busy={busy === "run"} className="!bg-[#e59a2f] !text-[#0f2a24] hover:!bg-[#f0b155]">
-              <Icon name="search" /> Find matching jobs
+            <Button onClick={search} busy={busy === "run" || searching} className="!bg-[#e59a2f] !text-[#0f2a24] hover:!bg-[#f0b155]">
+              {!searching && <Icon name="search" />} {searching ? "Searching job boards…" : "Find matching jobs"}
             </Button>
             <span className="text-xs text-white/70">
-              {finder.lastRun ? `Last search ${ago(finder.lastRun)} · ${finder.lastRunNote}` : "Sources: Arbeitnow" + (hasAdzuna ? " + Adzuna" : "")}
+              {searching
+                ? "Takes up to a minute. You can leave this page."
+                : finder.lastRun
+                  ? `Updated ${ago(finder.lastRun)} · ${finder.lastRunNote}`
+                  : "Sources: Arbeitnow" + (hasAdzuna ? " + Adzuna" : "")}
+              <span className="block">Refreshes automatically every day and whenever you upload a new CV.</span>
             </span>
           </div>
         </div>
@@ -137,7 +185,7 @@ export function FinderView({ finder, hasCv, germanLevel, targetCities, hasAdzuna
       ) : (
         <ul className="grid gap-3">
           {list.map((j) => (
-            <JobRow key={j.id} j={j} open={openId === j.id} onToggle={() => setOpenId(openId === j.id ? "" : j.id)} busy={busy} call={call} router={router} />
+            <JobRow key={j.id} j={j} open={openId === j.id} onToggle={() => setOpenId(openId === j.id ? "" : j.id)} busy={busy} running={running} call={call} />
           ))}
         </ul>
       )}
@@ -150,16 +198,18 @@ function JobRow({
   open,
   onToggle,
   busy,
+  running,
   call,
-  router,
 }: {
   j: FoundJob;
   open: boolean;
   onToggle: () => void;
   busy: string;
-  call: (label: string, body: unknown, after?: (r: Record<string, unknown>) => void) => Promise<void>;
-  router: ReturnType<typeof useRouter>;
+  running: Set<string>;
+  call: (label: string, body: unknown) => Promise<void>;
 }) {
+  const importing = busy === `import:${j.id}` || running.has(`finderimport:${j.id}`);
+  const checking = busy === `ai:${j.id}` || running.has(`finderai:${j.id}`);
   const score = j.ai?.score ?? j.fit.score;
   return (
     <li className="rounded-2xl border border-line bg-surface shadow-card transition hover:shadow-lift">
@@ -193,11 +243,11 @@ function JobRow({
             </Link>
           ) : (
             <Button
-              busy={busy === `import:${j.id}`}
-              onClick={() => call(`import:${j.id}`, { action: "import", id: j.id }, (r) => router.push(`/jobs/${r.jobId}`))}
+              busy={importing}
+              onClick={() => call(`import:${j.id}`, { action: "import", id: j.id })}
               className="!px-3 !py-1.5"
             >
-              Add & practise
+              {importing ? "Adding…" : "Add & practise"}
             </Button>
           )}
           <div className="flex gap-1">
@@ -251,8 +301,8 @@ function JobRow({
                 <p className="mt-2"><b>Lead with:</b> {j.ai.angle}</p>
               </div>
             ) : (
-              <Button variant="ghost" busy={busy === `ai:${j.id}`} onClick={() => call(`ai:${j.id}`, { action: "ai", id: j.id })}>
-                <Icon name="sparkle" /> Deep fit check with Claude
+              <Button variant="ghost" busy={checking} onClick={() => call(`ai:${j.id}`, { action: "ai", id: j.id })}>
+                {!checking && <Icon name="sparkle" />} {checking ? "Claude is checking the fit…" : "Deep fit check with Claude"}
               </Button>
             )}
           </div>

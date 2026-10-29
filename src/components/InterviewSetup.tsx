@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { COMPANIES, GENERAL_ROLES } from "@/lib/companies";
 import { api, Button, ErrorNote } from "./client";
 
 const TYPES = [
@@ -16,15 +17,20 @@ export function InterviewSetup({
   jobs,
   resumes,
   defaultJob,
+  defaultCompany,
   hasKey,
 }: {
   jobs: { id: string; label: string }[];
   resumes: { id: string; label: string }[];
   defaultJob?: string;
+  defaultCompany?: string;
   hasKey: boolean;
 }) {
   const router = useRouter();
+  const [mode, setMode] = useState<"company" | "job">(defaultJob || (jobs.length && !defaultCompany) ? "job" : "company");
   const [jobId, setJobId] = useState(defaultJob ?? jobs[0]?.id ?? "");
+  const [companyId, setCompanyId] = useState(defaultCompany ?? "");
+  const [roleId, setRoleId] = useState<string>("analyst");
   const [resumeId, setResumeId] = useState(resumes[0]?.id ?? "");
   const [type, setType] = useState<string>("hr");
   const [language, setLanguage] = useState("en");
@@ -37,7 +43,8 @@ export function InterviewSetup({
     setBusy(true);
     setErr("");
     try {
-      const r = await api<{ sessionId: string }>("/api/interview", { body: { jobId, resumeId, type, language, difficulty, lengthMin } });
+      const target = mode === "company" ? { general: { companyId, roleId } } : { jobId };
+      const r = await api<{ sessionId: string }>("/api/interview", { body: { ...target, resumeId, type, language, difficulty, lengthMin } });
       router.push(`/interview/${r.sessionId}`);
     } catch (e) {
       setErr((e as Error).message);
@@ -57,17 +64,65 @@ export function InterviewSetup({
 
   return (
     <div className="space-y-5">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="text-sm">
-          Job ad
-          <select className="field mt-1" value={jobId} onChange={(e) => setJobId(e.target.value)}>
-            {jobs.map((j) => (
-              <option key={j.id} value={j.id}>
-                {j.label}
-              </option>
+      <div>
+        <div className="mb-2 text-sm">Interview for</div>
+        {seg(mode, setMode, [
+          ["company", "A top company (no ad needed)"],
+          ["job", `A job ad${jobs.length ? ` (${jobs.length})` : ""}`],
+        ])}
+      </div>
+
+      {mode === "company" && (
+        <div className="space-y-3">
+          <div className="grid max-h-80 grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
+            {COMPANIES.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setCompanyId(c.id)}
+                className={`rounded-xl border p-3 text-left transition ${companyId === c.id ? "border-accent bg-accent-soft" : "border-line bg-surface hover:bg-surface-2"}`}
+              >
+                <div className="text-sm font-semibold">{c.name}</div>
+                <div className="text-xs text-muted">{c.kind} · {c.hq}</div>
+              </button>
             ))}
-          </select>
-        </label>
+          </div>
+          {companyId && (
+            <p className="rounded-xl bg-surface-2 px-3 py-2 text-xs text-muted">
+              <b className="text-ink">{COMPANIES.find((c) => c.id === companyId)?.name}:</b> {COMPANIES.find((c) => c.id === companyId)?.about} The interviewer plays someone from this company and will probe:{" "}
+              {COMPANIES.find((c) => c.id === companyId)?.focus}
+            </p>
+          )}
+        </div>
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        {mode === "company" ? (
+          <label className="text-sm">
+            Role
+            <select className="field mt-1" value={roleId} onChange={(e) => setRoleId(e.target.value)}>
+              {GENERAL_ROLES.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : jobs.length ? (
+          <label className="text-sm">
+            Job ad
+            <select className="field mt-1" value={jobId} onChange={(e) => setJobId(e.target.value)}>
+              {jobs.map((j) => (
+                <option key={j.id} value={j.id}>
+                  {j.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <p className="text-sm text-muted">
+            No job ads yet. <a href="/finder" className="text-accent underline">Find one</a> or practise with a top company instead.
+          </p>
+        )}
         <label className="text-sm">
           CV version
           <select className="field mt-1" value={resumeId} onChange={(e) => setResumeId(e.target.value)}>
@@ -131,7 +186,7 @@ export function InterviewSetup({
 
       <ErrorNote text={err} />
       {!hasKey && <p className="text-sm text-warn">A Claude API key is needed. Add it on the Integrations page.</p>}
-      <Button onClick={start} busy={busy} disabled={!jobId || !resumeId || !hasKey}>
+      <Button onClick={start} busy={busy} disabled={(mode === "job" ? !jobId : !companyId) || !resumeId || !hasKey}>
         {busy ? "Preparing your interviewer… (20–40 s)" : "Prepare interview"}
       </Button>
     </div>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { RunningNote } from "@/components/TaskTray";
 import { UploadForm } from "@/components/UploadForm";
 import { Card, Empty, LinkButton, PageHeader, Pill, ScoreBadge } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
@@ -17,9 +18,10 @@ export default async function JobsPage() {
         sub="Add the ads you applied to. Each one becomes a practice track: CV fit review, prep pack, tailored interviews, and its own score trend."
         action={<LinkButton href="/finder" variant="ghost" icon="search">Find new openings</LinkButton>}
       />
-      <div className="grid gap-6 lg:grid-cols-3">
+      <RunningNote kinds={["finder-import"]} />
+      <div className="grid gap-6 lg:grid-cols-3 [&>*]:min-w-0">
         <Card title="Add a job ad">
-          <UploadForm endpoint="/api/jobs" kind="job" allowUrl redirectBase="/jobs" />
+          <UploadForm endpoint="/api/jobs" kind="job" allowUrl />
         </Card>
         <div className="space-y-3 lg:col-span-2">
           {db.jobs.length === 0 ? (
@@ -41,7 +43,7 @@ export default async function JobsPage() {
                     <ScoreBadge score={r.avg} size="sm" />
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    <Pill tone="accent">German needed: {j.parsed.germanRequired.implied || "?"}</Pill>
+                    {j.general ? <Pill tone="signal">Company interview track</Pill> : <Pill tone="accent">German needed: {j.parsed.germanRequired.implied || "?"}</Pill>}
                     <Pill>{sessions.length} session(s)</Pill>
                     {best >= 0 && <Pill tone={best >= 75 ? "good" : best >= 55 ? "warn" : "bad"}>CV fit {best}</Pill>}
                     {r.ready && <Pill tone="good">Interview-ready</Pill>}

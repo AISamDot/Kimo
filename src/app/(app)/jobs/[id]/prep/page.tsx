@@ -6,6 +6,7 @@ import { Card, Empty, Icon, PageHeader, fmtDate } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { daysUntil, today } from "@/lib/practice";
 import { readDb } from "@/lib/store";
+import { RunningNote } from "@/components/TaskTray";
 
 export const metadata = { title: "Prep pack" };
 
@@ -35,13 +36,14 @@ export default async function PrepPage({ params }: PageProps<"/jobs/[id]/prep">)
             <Link href={`/jobs/${id}`} className="inline-flex items-center rounded-xl border border-line bg-surface px-4 py-2 text-sm hover:bg-surface-2">Back to job</Link>
             {p && <PrintButton />}
             <span className="no-print">
-              <ActionButton url={`/api/jobs/${id}/prep`} variant={p ? "ghost" : "primary"} busyLabel="Building your prep pack…">
+              <ActionButton url={`/api/jobs/${id}/prep`} taskKey={`prep:${id}`} variant={p ? "ghost" : "primary"} busyLabel="Building your prep pack…">
                 {p ? "Rebuild" : "Build prep pack"}
               </ActionButton>
             </span>
           </>
         }
       />
+      <RunningNote kinds={["prep"]} />
       {!p ? (
         <Empty title="No prep pack yet" icon="clipboard">
           One click builds your pitch in English and German, the 8 most likely questions mapped to your stories, salary and visa answers, questions to ask, and job-specific German phrases. Uses your story bank and your mock-interview weak points.

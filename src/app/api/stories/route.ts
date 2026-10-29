@@ -2,6 +2,7 @@ import { mineStories } from "@/lib/ai";
 import { handle, json } from "@/lib/api";
 import { apiUser } from "@/lib/auth";
 import { newId, readDb, updateDb } from "@/lib/store";
+import { startTask } from "@/lib/tasks";
 import { COMPETENCIES, type Competency, type Story } from "@/lib/types";
 
 export const maxDuration = 300;
@@ -16,13 +17,14 @@ export const POST = handle(async (req: Request) => {
     const db = await readDb(u.id);
     const resume = [...db.resumes].sort((a, c) => c.version - a.version)[0];
     if (!resume) throw new Error("Upload your CV first.");
-    const drafts = await mineStories(resume, db.profile, db.stories);
-    const now = new Date().toISOString();
-    const added = await updateDb(u.id, (d) => {
-      for (const x of drafts) d.stories.push({ ...x, id: newId("sty"), source: "cv", createdAt: now, updatedAt: now });
-      return drafts.length;
+    const task = await startTask(u.id, { key: "stories:mine", kind: "stories", label: "Drafting stories from your CV", href: "/stories" }, async () => {
+      const drafts = await mineStories(resume, db.profile, db.stories);
+      const now = new Date().toISOString();
+      await updateDb(u.id, (d) => {
+        for (const x of drafts) d.stories.push({ ...x, id: newId("sty"), source: "cv", createdAt: now, updatedAt: now });
+      });
     });
-    return json({ added });
+    return json({ task });
   }
   const x = b.story ?? {};
   if (!str(x.title).trim()) throw new Error("Give the story a title.");

@@ -109,7 +109,7 @@ export default async function SessionReport({ params }: PageProps<"/sessions/[id
         </div>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3 [&>*]:min-w-0">
         <Card title="Top 3 things to practise" className="lg:col-span-2">
           <ol className="space-y-3">
             {r.drills.map((d, i) => (

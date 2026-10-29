@@ -43,7 +43,7 @@ export default async function JobPage({ params, searchParams }: PageProps<"/jobs
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3 [&>*]:min-w-0">
         <Card title="Readiness">
           <div className="flex items-center gap-4">
             <ScoreBadge score={r.avg} size="lg" />

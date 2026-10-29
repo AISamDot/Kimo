@@ -2,6 +2,7 @@ import { generalCvReview } from "@/lib/ai";
 import { handle, json } from "@/lib/api";
 import { apiUser } from "@/lib/auth";
 import { readDb, updateDb } from "@/lib/store";
+import { startTask } from "@/lib/tasks";
 
 export const maxDuration = 300;
 
@@ -11,13 +12,15 @@ export const POST = handle(async (_req: Request, { params }: { params: Promise<{
   const db = await readDb(u.id);
   const resume = db.resumes.find((r) => r.id === id);
   if (!resume) throw new Error("CV not found");
-  const review = await generalCvReview(resume, db.profile);
-  await updateDb(u.id, (d) => {
-    const r = d.resumes.find((x) => x.id === id);
-    if (r) {
-      r.generalReview = review;
-      r.generalReviewAt = new Date().toISOString();
-    }
+  const task = await startTask(u.id, { key: `cvreview:${id}`, kind: "cv-review", label: `Reviewing ${resume.label}`, href: `/cv?id=${id}` }, async () => {
+    const review = await generalCvReview(resume, db.profile);
+    await updateDb(u.id, (d) => {
+      const r = d.resumes.find((x) => x.id === id);
+      if (r) {
+        r.generalReview = review;
+        r.generalReviewAt = new Date().toISOString();
+      }
+    });
   });
-  return json({ ok: true });
+  return json({ task });
 });

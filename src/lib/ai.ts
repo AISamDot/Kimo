@@ -41,6 +41,8 @@ function resumeBrief(r: Resume) {
 }
 
 function jobBrief(j: Job) {
+  if (j.general)
+    return `GENERAL COMPANY INTERVIEW (there is no specific job ad):\n${j.rawText}\n\nYou are an interviewer at ${j.parsed.company} hiring for an entry-level ${j.parsed.title.replace(" (general)", "")} role in Germany. Stay in character as someone from ${j.parsed.company}: reflect its business, scale and what it values, and ask why ${j.parsed.company} specifically. Use only well-known public facts about the company; never invent internal details, numbers or named people.`;
   return `JOB AD (structured):\n${JSON.stringify(j.parsed)}\n\nJOB AD (raw, truncated):\n${j.rawText.slice(0, 6000)}`;
 }
 
@@ -122,8 +124,36 @@ export async function parseJob(input: { text?: string; pdfBase64?: string }): Pr
 
 const RewriteZ = z.object({ original: z.string(), improved: z.string(), why: z.string() });
 
+/** World-class CV standards every review scores against (shown as a scorecard). */
+export const CV_SCORECARD_AREAS = [
+  "Impact & quantification",
+  "Action verbs & ownership",
+  "Targeting & positioning",
+  "6-second scan (top third, layout)",
+  "ATS readability & keywords",
+  "Professional summary",
+  "Skills backed by evidence",
+  "Education & projects",
+  "Language, tone & errors",
+  "German CV conventions",
+  "Length & formatting",
+  "Contact, links & work permit",
+] as const;
+
 const GeneralReviewZ = z.object({
   overallScore: z.number().describe("0-100 overall CV quality for the German supply-chain market"),
+  sixSecondTest: z.string().describe("What a recruiter takes away from a 6-second scan of the top third: who he is, level, target role. Be blunt."),
+  scorecard: z
+    .array(
+      z.object({
+        area: z.string().describe("Exactly one of the listed areas"),
+        score: z.number().describe("0-10 against a world-class CV (10 = top 1% of CVs a German supply-chain recruiter sees)"),
+        verdict: z.string().describe("One sentence"),
+        evidence: z.string().describe("Quote or point to the exact part of his CV this score is based on"),
+        fix: z.string().describe("The concrete change that would raise this score, with an example where useful"),
+      }),
+    )
+    .describe("One row per listed area, in the listed order"),
   verdict: z.string().describe("One honest paragraph"),
   positioning: z.string().describe("Is the story clear? What kind of supply-chain professional does this CV say he is, and does that match his targets?"),
   strengths: z.array(z.string()),
@@ -136,8 +166,8 @@ const GeneralReviewZ = z.object({
 export async function generalCvReview(resume: Resume, profile: Profile): Promise<GeneralReview> {
   return llmJson(GeneralReviewZ, {
     role: "analysis",
-    system: `${ROLE}\nYou are a senior recruiter for supply-chain roles in Germany who screens hundreds of CVs from international candidates.`,
-    content: `${resumeBrief(resume)}\n\nCANDIDATE PROFILE:\n${profileText(profile)}\n\nReview this CV holistically for the German supply-chain job market. For germanConventions check at least: tabular Lebenslauf layout, length (max 2 pages), CEFR-labelled language levels, a visible work-permit/visa line (critical for non-EU candidates), consistent reverse-chronological dates, contact details, photo/personal data handled per German norms, a profile/summary that matches target roles, quantified achievements, ATS-readable formatting. Red flags: unexplained gaps, vague titles, skills lists without evidence, typos, mixed languages.`,
+    system: `${ROLE}\nYou are a senior recruiter for supply-chain roles in Germany who screens hundreds of CVs from international candidates, and you coach candidates to world-class CV standards: every bullet as accomplishment + measure + how ("accomplished X, measured by Y, by doing Z"); a top third that passes a 6-second recruiter scan; clean single-column ATS-parsable layout with the employer's keywords; a tight targeted profile; skills proven in bullets, not just listed; German Lebenslauf norms. Score strictly: most real CVs land at 4-6/10 per area; reserve 9-10 for genuinely exceptional work.`,
+    content: `${resumeBrief(resume)}\n\nCANDIDATE PROFILE:\n${profileText(profile)}\n\nSCORECARD AREAS (score every one, in this order):\n${CV_SCORECARD_AREAS.map((a, i) => `${i + 1}. ${a}`).join("\n")}\n\nReview this CV holistically for the German supply-chain job market. For germanConventions check at least: tabular Lebenslauf layout, length (max 2 pages), CEFR-labelled language levels, a visible work-permit/visa line (critical for non-EU candidates), consistent reverse-chronological dates, contact details, photo/personal data handled per German norms, a profile/summary that matches target roles, quantified achievements, ATS-readable formatting. Red flags: unexplained gaps, vague titles, skills lists without evidence, typos, mixed languages.`,
   });
 }
 

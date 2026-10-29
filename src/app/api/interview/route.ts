@@ -2,7 +2,8 @@ import { planSession } from "@/lib/ai";
 import { handle, json } from "@/lib/api";
 import { apiUser } from "@/lib/auth";
 import { RUBRIC_VERSION } from "@/lib/metrics";
-import { newId, readDb, readSession, writeSession } from "@/lib/store";
+import { generalJob } from "@/lib/companies";
+import { newId, readDb, readSession, updateDb, writeSession } from "@/lib/store";
 import type { Difficulty, InterviewLanguage, InterviewType, SessionDetail } from "@/lib/types";
 
 export const maxDuration = 300;
@@ -13,17 +14,33 @@ const TYPES: InterviewType[] = ["hr", "manager", "technical", "german", "pressur
 export const POST = handle(async (req: Request) => {
   const u = await apiUser();
   const b = (await req.json()) as {
-    jobId: string;
+    jobId?: string;
+    general?: { companyId: string; roleId: string };
     resumeId: string;
     type: InterviewType;
     language: InterviewLanguage;
     difficulty: Difficulty;
     lengthMin: number;
   };
-  const db = await readDb(u.id);
+  let db = await readDb(u.id);
+  if (b.general) {
+    // General company interview: reuse (or create) the practice track for this company + role.
+    const { companyId, roleId } = b.general;
+    const existing = db.jobs.find((j) => j.general?.companyId === companyId && j.general?.roleId === roleId);
+    if (existing) b.jobId = existing.id;
+    else {
+      const track = generalJob(companyId, roleId, newId("job"));
+      if (!track) throw new Error("Pick a company and a role.");
+      await updateDb(u.id, (d) => {
+        d.jobs.push(track);
+      });
+      b.jobId = track.id;
+      db = await readDb(u.id);
+    }
+  }
   const job = db.jobs.find((j) => j.id === b.jobId);
   const resume = db.resumes.find((r) => r.id === b.resumeId);
-  if (!job) throw new Error("Pick a job ad first.");
+  if (!job) throw new Error("Pick a job ad or a company first.");
   if (!resume) throw new Error("Upload a CV first.");
   const type = TYPES.includes(b.type) ? b.type : "hr";
   const language: InterviewLanguage = type === "german" ? "de" : ["en", "de", "mixed"].includes(b.language) ? b.language : "en";

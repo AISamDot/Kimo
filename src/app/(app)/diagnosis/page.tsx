@@ -2,6 +2,7 @@ import { ActionButton } from "@/components/client";
 import { Card, PageHeader, Pill, fmtDate } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { readDb } from "@/lib/store";
+import { RunningNote } from "@/components/TaskTray";
 
 const AREA: Record<string, string> = {
   cv: "CV",
@@ -26,8 +27,9 @@ export default async function DiagnosisPage() {
         eyebrow="Track"
         title="Why no offer yet?"
         sub="Combines your real application funnel, CV reviews and mock-interview scores into a ranked list of causes, each with its evidence and confidence."
-        action={<ActionButton url="/api/diagnosis" busyLabel="Analysing… (about a minute)">{d ? "Refresh diagnosis" : "Run diagnosis"}</ActionButton>}
+        action={<ActionButton url="/api/diagnosis" taskKey="diagnosis" busyLabel="Analysing… (about a minute)">{d ? "Refresh diagnosis" : "Run diagnosis"}</ActionButton>}
       />
+      <RunningNote kinds={["diagnosis"]}>Reads all your sessions, debriefs and applications. Takes a minute or two; you can leave this page.</RunningNote>
       {(apps < 5 || scored < 3) && (
         <p className="rounded-lg bg-warn-soft px-3 py-2 text-sm text-warn">
           For a high-confidence answer, log at least 5 real applications (you have {apps}) and complete at least 3 scored mock interviews (you have {scored}). You can still run it now for a first read.

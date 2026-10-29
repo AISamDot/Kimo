@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
+import type { Task } from "@/lib/types";
+import { addTask, useRunningTask } from "./TaskTray";
 
 export async function api<T = unknown>(url: string, opts: { method?: string; body?: unknown; form?: FormData } = {}): Promise<T> {
   const res = await fetch(url, {
@@ -11,6 +13,8 @@ export async function api<T = unknown>(url: string, opts: { method?: string; bod
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((data as { error?: string }).error || `Request failed (${res.status})`);
+  const task = (data as { task?: Task }).task;
+  if (task) addTask(task); // slow work continues on the server; the tray tracks it
   return data as T;
 }
 
@@ -49,7 +53,10 @@ export function Button({
   );
 }
 
-/** Button that POSTs to an endpoint, shows progress, then refreshes the page. */
+/**
+ * Button that POSTs to an endpoint, shows progress, then refreshes the page.
+ * With `taskKey`, it stays busy for as long as that background task runs — even after leaving and coming back.
+ */
 export function ActionButton({
   url,
   body,
@@ -59,6 +66,7 @@ export function ActionButton({
   variant,
   confirm,
   redirectTo,
+  taskKey,
 }: {
   url: string;
   body?: unknown;
@@ -68,9 +76,12 @@ export function ActionButton({
   variant?: "primary" | "ghost" | "danger";
   confirm?: string;
   redirectTo?: string;
+  taskKey?: string;
 }) {
   const router = useRouter();
-  const [busy, setBusy] = useState(false);
+  const [sending, setSending] = useState(false);
+  const running = useRunningTask(taskKey);
+  const busy = sending || !!running;
   const [err, setErr] = useState("");
   return (
     <span className="inline-flex flex-col items-start gap-1">
@@ -79,7 +90,7 @@ export function ActionButton({
         busy={busy}
         onClick={async () => {
           if (confirm && !window.confirm(confirm)) return;
-          setBusy(true);
+          setSending(true);
           setErr("");
           try {
             await api(url, { method, body: body ?? {} });
@@ -88,12 +99,13 @@ export function ActionButton({
           } catch (e) {
             setErr((e as Error).message);
           } finally {
-            setBusy(false);
+            setSending(false);
           }
         }}
       >
         {busy && busyLabel ? busyLabel : children}
       </Button>
+      {running && <span className="text-xs text-muted">Running in the background. You can leave this page.</span>}
       {err && <span className="max-w-sm text-xs text-bad">{err}</span>}
     </span>
   );

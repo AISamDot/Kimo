@@ -1,13 +1,14 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api, Button, ErrorNote } from "./client";
+import { useRunningTask } from "./TaskTray";
 
 export function JobReviewRunner({ jobId, resumes, defaultId }: { jobId: string; resumes: { id: string; label: string }[]; defaultId?: string }) {
-  const router = useRouter();
   const [rid, setRid] = useState(defaultId ?? resumes[0]?.id ?? "");
-  const [busy, setBusy] = useState(false);
+  const [sending, setSending] = useState(false);
+  const running = useRunningTask(`jobreview:${jobId}:${rid}`);
+  const busy = sending || !!running;
   const [err, setErr] = useState("");
   if (!resumes.length) return <p className="text-sm text-muted">Upload a CV first.</p>;
   return (
@@ -22,16 +23,14 @@ export function JobReviewRunner({ jobId, resumes, defaultId }: { jobId: string; 
       <Button
         busy={busy}
         onClick={async () => {
-          setBusy(true);
+          setSending(true);
           setErr("");
           try {
             await api(`/api/jobs/${jobId}/review`, { body: { resumeId: rid } });
-            router.push(`/jobs/${jobId}?cv=${rid}`);
-            router.refresh();
           } catch (e) {
             setErr((e as Error).message);
           } finally {
-            setBusy(false);
+            setSending(false);
           }
         }}
       >

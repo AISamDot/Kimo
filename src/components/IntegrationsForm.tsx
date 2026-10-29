@@ -15,6 +15,7 @@ const SERVICES: Svc[] = [
   { id: "hume", keyField: "hume", name: "Hume AI", use: "Optional: how your voice may come across (vocal expression).", url: "https://platform.hume.ai/settings/keys" },
   { id: "azure", keyField: "azureSpeech", name: "Azure AI Speech", use: "Optional: pronunciation scores for German/English answers.", url: "https://portal.azure.com/#create/Microsoft.CognitiveServicesSpeechServices" },
   { id: "tavus", keyField: "tavus", name: "Tavus", use: "Optional: realistic video interviewer (most expensive part).", url: "https://platform.tavus.io/api-keys" },
+  { id: "apify", keyField: "apify", name: "Apify", use: "Optional, paid: adds LinkedIn and Indeed jobs to the Job finder once a day (about 300 jobs, roughly $0.07 a day).", url: "https://console.apify.com/settings/integrations" },
   { id: "adzuna", keyField: "adzunaAppKey", name: "Adzuna (free)", use: "Optional: more openings in the Job finder (free developer key). Arbeitnow works without a key.", url: "https://developer.adzuna.com/signup" },
 ];
 

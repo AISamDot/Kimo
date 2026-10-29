@@ -5,6 +5,7 @@ import { Card, Icon, PageHeader, Pill, VERDICT_LABEL, VERDICT_TONE, fmtDate } fr
 import { requireUser } from "@/lib/auth";
 import { readDb } from "@/lib/store";
 import { STAGE_LABELS } from "@/lib/types";
+import { RunningNote } from "@/components/TaskTray";
 
 export const metadata = { title: "Real interviews" };
 
@@ -19,6 +20,7 @@ export default async function DebriefPage() {
         title="Real interview debriefs"
         sub="Right after each real interview, write down what they asked and what you answered. You get an honest read of how it went and better answers, and the diagnosis learns from real interviews, not only mocks."
       />
+      <RunningNote kinds={["debrief"]} />
       <DebriefForm apps={db.applications.filter((a) => a.outcome === "active" || a.outcome === "rejected").map((a) => ({ id: a.id, label: `${a.company} · ${a.role}` }))} />
       {list.map((d) => {
         const app = db.applications.find((a) => a.id === d.applicationId);

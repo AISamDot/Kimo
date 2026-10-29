@@ -51,6 +51,7 @@ export interface ApiKeys {
   tavus: string;
   adzunaAppId: string;
   adzunaAppKey: string;
+  apify: string;
 }
 
 export type SttProvider = "openai" | "elevenlabs" | "deepgram" | "browser";
@@ -146,10 +147,22 @@ export interface Job {
   rawText: string;
   parsed: JobParsed;
   prepPack?: PrepPack;
+  /** Set for general company interviews (no real job ad). */
+  general?: { companyId: string; roleId: string };
+}
+
+export interface ScorecardItem {
+  area: string;
+  score: number; // 0-10
+  verdict: string;
+  evidence: string;
+  fix: string;
 }
 
 export interface GeneralReview {
   overallScore: number;
+  scorecard?: ScorecardItem[];
+  sixSecondTest?: string;
   verdict: string;
   positioning: string;
   strengths: string[];
@@ -492,7 +505,7 @@ export interface Phrase {
   createdAt: string;
 }
 
-export type FinderSource = "arbeitnow" | "adzuna";
+export type FinderSource = "arbeitnow" | "adzuna" | "linkedin" | "indeed";
 
 export interface LocalFit {
   score: number; // 0-100
@@ -509,6 +522,8 @@ export interface LocalFit {
 export interface FoundJob {
   id: string; // `${source}:${externalId}`
   source: FinderSource;
+  /** Set for Apify results: the region of the country searched. */
+  region?: string;
   title: string;
   company: string;
   location: string;
@@ -531,16 +546,35 @@ export interface FinderPrefs {
   remoteOnly: boolean;
   entryLevelOnly: boolean;
   minScore: number;
+  /** Germany is covered by the free boards; other regions need the Apify scrape. */
+  regions: ("germany" | "europe" | "gcc" | "asia" | "africa")[];
 }
 
 export interface Finder {
   prefs: FinderPrefs;
   lastRun: string;
   lastRunNote: string;
+  /** Last paid Apify scrape (LinkedIn/Indeed); capped to about once a day. */
+  apifyLastRun?: string;
+  apifyRegions?: string; // regions that scrape covered, e.g. "germany,gcc"
   results: FoundJob[];
 }
 
+export interface Task {
+  id: string;
+  key: string; // dedupe: one running task per key
+  kind: string;
+  label: string;
+  status: "running" | "done" | "failed";
+  href: string; // where the result shows up
+  error?: string;
+  createdAt: string;
+  finishedAt?: string;
+  dismissed?: boolean;
+}
+
 export interface UserDb {
+  tasks: Task[];
   finder: Finder;
   profile: Profile;
   stories: Story[];

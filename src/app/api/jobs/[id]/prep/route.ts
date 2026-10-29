@@ -2,6 +2,7 @@ import { buildPrepPack } from "@/lib/ai";
 import { handle, json } from "@/lib/api";
 import { apiUser } from "@/lib/auth";
 import { readDb, readSession, updateDb } from "@/lib/store";
+import { startTask } from "@/lib/tasks";
 
 export const maxDuration = 300;
 
@@ -22,10 +23,12 @@ export const POST = handle(async (_req: Request, { params }: { params: Promise<{
     for (const a of d?.analysis?.answers ?? []) if (a.whatWasMissing) weakPoints.push(`${a.question} → missing: ${a.whatWasMissing}`);
     for (const x of d?.analysis?.report.silentRejecters ?? []) weakPoints.push(x);
   }
-  const pack = await buildPrepPack({ job, resume, profile: db.profile, stories: db.stories, review, weakPoints: weakPoints.slice(0, 15) });
-  await updateDb(u.id, (d) => {
-    const j = d.jobs.find((x) => x.id === id);
-    if (j) j.prepPack = { ...pack, createdAt: new Date().toISOString(), resumeId: resume.id };
+  const task = await startTask(u.id, { key: `prep:${id}`, kind: "prep", label: `Building prep pack: ${job.parsed.title || "job"}`, href: `/jobs/${id}/prep` }, async () => {
+    const pack = await buildPrepPack({ job, resume, profile: db.profile, stories: db.stories, review, weakPoints: weakPoints.slice(0, 15) });
+    await updateDb(u.id, (d) => {
+      const j = d.jobs.find((x) => x.id === id);
+      if (j) j.prepPack = { ...pack, createdAt: new Date().toISOString(), resumeId: resume.id };
+    });
   });
-  return json({ ok: true });
+  return json({ task });
 });

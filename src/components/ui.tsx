@@ -62,7 +62,7 @@ export function Card({ children, className = "", title, action, icon }: { childr
   return (
     <section className={`rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6 ${className}`}>
       {(title || action) && (
-        <div className="mb-4 flex items-center justify-between gap-2">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           {title && (
             <h2 className="flex items-center gap-2 text-[0.8rem] font-semibold uppercase tracking-[0.1em] text-muted">
               {icon && <Icon name={icon} className="h-4 w-4 text-accent" />}

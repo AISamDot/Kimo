@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { STORY_COMPETENCIES, storyCoverage } from "@/lib/practice";
 import { readDb } from "@/lib/store";
 import { COMPETENCY_LABELS } from "@/lib/types";
+import { RunningNote } from "@/components/TaskTray";
 
 export const metadata = { title: "Story bank" };
 
@@ -20,12 +21,13 @@ export default async function StoriesPage() {
         sub="8–10 strong STAR stories answer almost every behavioural question. Build them once, rehearse them, reuse them in every interview. The interviewer, the scoring and the prep packs all use these."
         action={
           db.resumes.length > 0 && (
-            <ActionButton url="/api/stories" body={{ mine: true }} busyLabel="Drafting from your CV…">
+            <ActionButton url="/api/stories" body={{ mine: true }} taskKey="stories:mine" busyLabel="Drafting from your CV…">
               Draft stories from my CV
             </ActionButton>
           )
         }
       />
+      <RunningNote kinds={["stories"]} />
       <Card title="Coverage" icon="target">
         <div className="flex flex-wrap gap-2">
           {STORY_COMPETENCIES.map((c) => (

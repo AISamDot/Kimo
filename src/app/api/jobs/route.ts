@@ -3,6 +3,7 @@ import { handle, json } from "@/lib/api";
 import { apiUser } from "@/lib/auth";
 import { extractUpload, fetchUrlText } from "@/lib/files";
 import { newId, updateDb } from "@/lib/store";
+import { startTask } from "@/lib/tasks";
 import type { Job } from "@/lib/types";
 
 export const maxDuration = 300;
@@ -27,10 +28,13 @@ export const POST = handle(async (req: Request) => {
   } else {
     throw new Error("Paste the job ad, upload it, or give a link.");
   }
-  const { parsed, text } = await parseJob(input);
-  const job: Job = { id: newId("job"), createdAt: new Date().toISOString(), source, url, rawText: text, parsed };
-  await updateDb(u.id, (db) => {
-    db.jobs.push(job);
+  const id = newId("job");
+  const task = await startTask(u.id, { key: `jobparse:${id}`, kind: "job-read", label: "Reading the job ad", href: `/jobs/${id}` }, async () => {
+    const { parsed, text } = await parseJob(input);
+    const job: Job = { id, createdAt: new Date().toISOString(), source, url, rawText: text, parsed };
+    await updateDb(u.id, (db) => {
+      db.jobs.push(job);
+    });
   });
-  return json({ job: { id: job.id } });
+  return json({ task });
 });
