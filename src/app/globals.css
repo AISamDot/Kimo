@@ -1,26 +1,86 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --bg: #f6f5f1;
+  --surface: #ffffff;
+  --surface-2: #f0eee8;
+  --ink: #1d1f24;
+  --muted: #646872;
+  --line: #e2dfd6;
+  --accent: #1f5f5b;
+  --accent-ink: #ffffff;
+  --accent-soft: #e3efed;
+  --good: #2f7d4f;
+  --good-soft: #e4f2e8;
+  --warn: #a5650b;
+  --warn-soft: #fbf0dc;
+  --bad: #b13a2e;
+  --bad-soft: #f8e4e1;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #15171a;
+    --surface: #1d2024;
+    --surface-2: #25292e;
+    --ink: #eceae4;
+    --muted: #a0a4ab;
+    --line: #33373d;
+    --accent: #5fb3ac;
+    --accent-ink: #0f1513;
+    --accent-soft: #1f3331;
+    --good: #6cc48f;
+    --good-soft: #1d3326;
+    --warn: #e2a64b;
+    --warn-soft: #3a2e1a;
+    --bad: #ec8075;
+    --bad-soft: #3d2320;
   }
 }
 
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --font-sans: var(--font-sans-face);
+  --font-serif: var(--font-serif-face);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans-face), system-ui, sans-serif;
+}
+
+input, select, textarea {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.field {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.925rem;
+  outline: none;
+}
+.field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+@media print {
+  nav, .no-print { display: none !important; }
+  body { background: white; }
+  main { padding: 0 !important; }
 }
