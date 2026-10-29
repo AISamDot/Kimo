@@ -1,3 +1,4 @@
+import { addDays, today } from "@/lib/practice";
 import Link from "next/link";
 import { LineChart, SERIES_COLORS, heatColor } from "@/components/charts";
 import { DrillToggle } from "@/components/DrillToggle";
@@ -12,7 +13,7 @@ export default async function ProgressPage() {
   const done = db.sessions.filter((s) => s.status === "done").sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   const jobTitle = (id: string) => db.jobs.find((j) => j.id === id)?.parsed.company ?? "";
 
-  const weekAgo = Date.now() - 7 * 86400_000;
+  const weekAgo = new Date(`${addDays(today(), -7)}T00:00:00Z`).getTime();
   const thisWeek = done.filter((s) => new Date(s.createdAt).getTime() > weekAgo).length;
   const minutes = done.reduce((m, s) => m + (s.endedAt ? (new Date(s.endedAt).getTime() - new Date(s.createdAt).getTime()) / 60000 : s.lengthMin), 0);
   // streak = consecutive days (ending today or yesterday) with at least one session
@@ -33,7 +34,7 @@ export default async function ProgressPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Progress" sub="Every session is scored with the same rubric, so the trend is comparable over time." />
+      <PageHeader eyebrow="Track" title="Progress" sub="Every session is scored with the same rubric, so the trend is comparable over time." />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Scored sessions" value={done.length} hint={`${thisWeek} this week`} />
         <Stat label="Practice time" value={`${Math.round(minutes)} min`} />

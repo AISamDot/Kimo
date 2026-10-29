@@ -23,6 +23,7 @@ export default async function DiagnosisPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        eyebrow="Track"
         title="Why no offer yet?"
         sub="Combines your real application funnel, CV reviews and mock-interview scores into a ranked list of causes, each with its evidence and confidence."
         action={<ActionButton url="/api/diagnosis" busyLabel="Analysing… (about a minute)">{d ? "Refresh diagnosis" : "Run diagnosis"}</ActionButton>}
@@ -69,7 +70,7 @@ export default async function DiagnosisPage() {
           </div>
           <Card title="Check it against a human">
             <p className="text-sm text-muted">
-              The AI isn't a German hiring manager. Once, do a mock interview with a real supply-chain professional (career service, alumni, LinkedIn). If their main criticisms match this page, trust the app for repeated practice.
+              The AI isn’t a German hiring manager. Once, do a mock interview with a real supply-chain professional (career service, alumni, LinkedIn). If their main criticisms match this page, trust the app for repeated practice.
             </p>
           </Card>
         </>

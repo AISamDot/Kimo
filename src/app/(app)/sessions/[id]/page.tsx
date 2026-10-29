@@ -33,7 +33,7 @@ export default async function SessionReport({ params }: PageProps<"/sessions/[id
   if (s.status === "analyzing") {
     return (
       <div className="space-y-6">
-        <PageHeader title={title} sub={sub} />
+        <PageHeader eyebrow="Session report" title={title} sub={sub} />
         <AnalysisPoller sessionId={id} />
       </div>
     );
@@ -41,7 +41,7 @@ export default async function SessionReport({ params }: PageProps<"/sessions/[id
   if (s.status === "failed" || !s.analysis) {
     return (
       <div className="space-y-6">
-        <PageHeader title={title} sub={sub} />
+        <PageHeader eyebrow="Session report" title={title} sub={sub} />
         <Card>
           <p className="text-bad">{s.error ?? "The analysis didn't finish."}</p>
           <div className="mt-4 flex gap-2">

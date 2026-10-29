@@ -15,7 +15,7 @@ export default async function CvPage({ searchParams }: PageProps<"/cv">) {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Your CV" sub="Upload each version you use. Every interview and application is linked to a version, so you can see which one works better." />
+      <PageHeader eyebrow="Prepare" title="Your CV" sub="Upload each version you use. Every interview and application is linked to a version, so you can see which one works better." />
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6">
           <Card title="Add a CV version">
@@ -125,7 +125,7 @@ export default async function CvPage({ searchParams }: PageProps<"/cv">) {
                     </Card>
                   )}
                   <Card title="Stronger bullets">
-                    <p className="mb-3 text-xs text-muted">Replace [X] with your real numbers. Never invent numbers you can't defend in an interview.</p>
+                    <p className="mb-3 text-xs text-muted">Replace [X] with your real numbers. Never invent numbers you can’t defend in an interview.</p>
                     <ul className="space-y-4 text-sm">
                       {rv.bulletRewrites.map((b, i) => (
                         <li key={i}>

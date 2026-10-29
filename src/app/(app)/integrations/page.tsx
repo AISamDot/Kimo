@@ -16,7 +16,7 @@ export default async function IntegrationsPage() {
   };
   return (
     <div>
-      <PageHeader title="Integrations" sub="Connect the services the app uses. Only Claude is required; everything else upgrades realism or adds analysis." />
+      <PageHeader eyebrow="Setup" title="Integrations" sub="Connect the services the app uses. Only Claude is required; everything else upgrades realism or adds analysis." />
       <IntegrationsForm initial={masked} allowSignups={app.allowSignups} isAdmin={user.role === "admin"} />
     </div>
   );

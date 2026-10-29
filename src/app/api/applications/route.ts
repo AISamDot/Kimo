@@ -21,6 +21,7 @@ function clean(b: Partial<Application>, base: Application): Application {
     companySize: ["", "startup", "mid", "large"].includes(b.companySize as string) ? b.companySize! : base.companySize,
     feedback: str(b.feedback, base.feedback),
     notes: str(b.notes, base.notes),
+    nextInterviewDate: typeof b.nextInterviewDate === "string" && /^(\d{4}-\d{2}-\d{2})?$/.test(b.nextInterviewDate) ? b.nextInterviewDate || undefined : base.nextInterviewDate,
   };
 }
 

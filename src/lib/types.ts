@@ -49,6 +49,8 @@ export interface ApiKeys {
   azureSpeech: string;
   azureRegion: string;
   tavus: string;
+  adzunaAppId: string;
+  adzunaAppKey: string;
 }
 
 export type SttProvider = "openai" | "elevenlabs" | "deepgram" | "browser";
@@ -143,6 +145,7 @@ export interface Job {
   url: string;
   rawText: string;
   parsed: JobParsed;
+  prepPack?: PrepPack;
 }
 
 export interface GeneralReview {
@@ -371,6 +374,7 @@ export interface Application {
   companySize: "" | "startup" | "mid" | "large";
   feedback: string;
   notes: string;
+  nextInterviewDate?: string; // YYYY-MM-DD of an upcoming real interview
 }
 
 export interface Drill {
@@ -404,8 +408,145 @@ export interface Diagnosis {
   nextSteps: string[];
 }
 
+export interface Story {
+  id: string;
+  title: string;
+  situation: string;
+  task: string;
+  action: string;
+  result: string;
+  metrics: string;
+  competencies: Competency[];
+  answersQuestions: string[];
+  source: "cv" | "manual";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AnswerAttempt {
+  id: string;
+  createdAt: string;
+  key: string; // groups attempts at the same question
+  jobId: string;
+  question: string;
+  competency: Competency;
+  lang: Lang;
+  transcript: string;
+  durationSec: number;
+  content: number; // 0-100
+  scores: Omit<AnswerScore, "questionNo" | "question" | "competency">;
+  delivery: { wpm: number; fillersPerMin: number; longPauses: number };
+}
+
+export interface DebriefQuestion {
+  q: string;
+  myAnswer: string;
+}
+
+export interface Debrief {
+  id: string;
+  createdAt: string;
+  applicationId: string;
+  date: string;
+  stage: Stage;
+  language: "en" | "de" | "mixed";
+  interviewers: string;
+  feeling: number; // 1-5
+  notes: string;
+  questions: DebriefQuestion[];
+  result: {
+    summary: string;
+    likelyVerdict: "strong_no" | "no" | "lean_yes" | "yes";
+    perQuestion: { q: string; score: number; assessment: string; betterAnswer: string }[];
+    redFlags: string[];
+    whatToPractise: string[];
+  };
+}
+
+export interface PrepPack {
+  createdAt: string;
+  resumeId: string;
+  pitchEn: string;
+  pitchDe: string;
+  whyThisCompany: string;
+  topQuestions: { q: string; why: string; story: string; keyPoints: string[] }[];
+  salaryScript: string;
+  visaScript: string;
+  germanAnswerScript: string;
+  questionsToAsk: string[];
+  germanPhrases: { de: string; en: string }[];
+  avoid: string[];
+  checklist: string[];
+}
+
+export interface Phrase {
+  id: string;
+  de: string;
+  en: string;
+  note: string;
+  source: "session" | "job" | "manual";
+  box: number; // Leitner box 0-6
+  due: string; // YYYY-MM-DD
+  reviews: number;
+  lapses: number;
+  createdAt: string;
+}
+
+export type FinderSource = "arbeitnow" | "adzuna";
+
+export interface LocalFit {
+  score: number; // 0-100
+  domain: number;
+  skills: number;
+  seniority: "entry" | "mid" | "senior" | "unknown";
+  germanNeeded: string; // CEFR or "unknown"
+  germanGap: number; // levels short (0 = meets)
+  matched: string[];
+  reasons: string[];
+  flags: string[];
+}
+
+export interface FoundJob {
+  id: string; // `${source}:${externalId}`
+  source: FinderSource;
+  title: string;
+  company: string;
+  location: string;
+  remote: boolean;
+  url: string;
+  description: string; // plain text, truncated
+  postedAt: string;
+  salary: string;
+  fit: LocalFit;
+  ai?: { score: number; verdict: "apply" | "stretch" | "skip"; why: string; risks: string[]; angle: string; checkedAt: string };
+  status: "new" | "saved" | "dismissed" | "imported";
+  jobId?: string;
+  foundAt: string;
+}
+
+export interface FinderPrefs {
+  keywords: string; // comma separated search terms
+  cities: string; // comma separated; empty = all Germany
+  includeRemote: boolean;
+  remoteOnly: boolean;
+  entryLevelOnly: boolean;
+  minScore: number;
+}
+
+export interface Finder {
+  prefs: FinderPrefs;
+  lastRun: string;
+  lastRunNote: string;
+  results: FoundJob[];
+}
+
 export interface UserDb {
+  finder: Finder;
   profile: Profile;
+  stories: Story[];
+  attempts: AnswerAttempt[];
+  debriefs: Debrief[];
+  phrases: Phrase[];
   resumes: Resume[];
   jobs: Job[];
   jobReviews: JobReview[];

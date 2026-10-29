@@ -32,7 +32,7 @@ export function Button({
   className?: string;
 }) {
   const cls = {
-    primary: "bg-accent text-accent-ink hover:opacity-90",
+    primary: "bg-accent text-accent-ink shadow-card hover:bg-accent-2",
     ghost: "border border-line bg-surface hover:bg-surface-2",
     danger: "border border-line bg-surface text-bad hover:bg-bad-soft",
   }[variant];
@@ -41,7 +41,7 @@ export function Button({
       type={type}
       onClick={onClick}
       disabled={busy || disabled}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition disabled:opacity-50 ${cls} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition active:scale-[0.98] disabled:opacity-50 ${cls} ${className}`}
     >
       {busy && <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />}
       {children}
@@ -101,5 +101,5 @@ export function ActionButton({
 
 export function ErrorNote({ text }: { text: string }) {
   if (!text) return null;
-  return <p className="rounded-lg bg-bad-soft px-3 py-2 text-sm text-bad">{text}</p>;
+  return <p className="rounded-xl bg-bad-soft px-3 py-2 text-sm text-bad">{text}</p>;
 }

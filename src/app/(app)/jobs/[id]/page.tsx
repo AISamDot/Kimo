@@ -29,11 +29,13 @@ export default async function JobPage({ params, searchParams }: PageProps<"/jobs
   return (
     <div className="space-y-6">
       <PageHeader
+        eyebrow="Job ad"
         title={p.title}
         sub={`${p.company} · ${p.location} · ${p.seniority} · ${p.workModel}`}
         action={
-          <div className="flex gap-2">
-            <LinkButton href={`/interview/new?job=${id}`}>Practise this job</LinkButton>
+          <div className="flex flex-wrap gap-2">
+            <LinkButton href={`/interview/new?job=${id}`} icon="mic">Practise this job</LinkButton>
+            <LinkButton href={`/jobs/${id}/prep`} variant="ghost" icon="clipboard">{job.prepPack ? "Prep pack" : "Build prep pack"}</LinkButton>
             <ActionButton url={`/api/jobs/${id}`} method="DELETE" variant="danger" confirm="Delete this job ad and all its practice sessions?" redirectTo="/jobs">
               Delete
             </ActionButton>

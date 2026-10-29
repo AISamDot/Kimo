@@ -12,7 +12,7 @@ export default async function NewInterview({ searchParams }: PageProps<"/intervi
   if (!db.jobs.length) return <Empty title="Add a job ad first" href="/jobs" cta="Add a job ad">Interviews are tailored to a specific job ad.</Empty>;
   return (
     <div className="space-y-6">
-      <PageHeader title="Practise an interview" sub="A live two-way interview by voice, tailored to the job ad and your CV. You get a scored report afterwards." />
+      <PageHeader eyebrow="Practise" title="Mock interview" sub="A live two-way interview by voice, tailored to the job ad and your CV. You get a scored report afterwards." />
       <Card>
         <InterviewSetup
           jobs={[...db.jobs].reverse().map((j) => ({ id: j.id, label: `${j.parsed.title} — ${j.parsed.company}` }))}

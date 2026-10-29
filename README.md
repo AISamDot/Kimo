@@ -9,6 +9,13 @@ A private web app for practising supply-chain job interviews in Germany (in Engl
 - **Report**: hiring verdict, 3 drills, model answers built from your own experience, silent rejecters (visa, salary, start date), and a comparison with your last session.
 - **Progress**: score trends, a skill heatmap, drills that tick themselves off, and readiness per job.
 - **Applications and Diagnosis**: log real applications, see your funnel, and get a ranked root-cause diagnosis.
+- **Job finder**: pulls live openings in Germany (Arbeitnow, keyless; Adzuna with a free key) and ranks them for free against the CV, German level, seniority and target cities. Remote jobs are supported: open to Germany/EU or worldwide, with a remote-only switch. One click runs a deeper Claude fit check, and another adds the ad as a practice track.
+- **Story bank**: STAR stories drafted from the CV and edited by hand, with competency coverage and gaps. The interviewer, scoring and prep packs all reuse them.
+- **Quick drills**: answer one question by voice or text and get an instant score. Questions come from your weakest mock answers, real interviews, job ads or the core bank, and the score history per question shows improvement.
+- **Prep pack per job**: pitch in English and German, the 8 likely questions mapped to stories, salary, visa and German-level answers, questions to ask, and job phrases. Printable.
+- **Real-interview debriefs**: log what was asked and answered after a real interview and get a likely verdict, better answers and red flags. The diagnosis uses these too.
+- **German trainer**: spaced-repetition flashcards fed automatically by corrections from mock interviews, plus prep-pack and manual phrases.
+- **Today plan**: a countdown to the next real interview (set on Applications) plus a daily checklist.
 
 The product spec is in [docs/PRD.md](docs/PRD.md).
 
@@ -44,7 +51,8 @@ Sign-up and login use email and password. Passwords are hashed with scrypt, sess
 
 ## Costs (approx.)
 
-- Claude: about $0.30–1 per 20-minute interview, including scoring.
+- Claude: about $0.30–1 per 20-minute interview, including scoring. Quick drill, prep pack, debrief or fit check: a few cents each.
+- Job finder ranking and the German trainer: free.
 - ElevenLabs or OpenAI voice and transcription: a few dollars per hour of interviews.
 - Tavus video avatar: about $0.30/min.
 - The browser voice and browser speech recognition are free.

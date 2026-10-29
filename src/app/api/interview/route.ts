@@ -44,7 +44,7 @@ export const POST = handle(async (req: Request) => {
     .map(([k]) => k);
   const review = db.jobReviews.find((r) => r.jobId === job.id && r.resumeId === resume.id) ?? null;
 
-  const plan = await planSession({ job, resume, profile: db.profile, review, type, language, difficulty, lengthMin, askedBefore, weakCompetencies: weak });
+  const plan = await planSession({ job, resume, profile: db.profile, review, type, language, difficulty, lengthMin, askedBefore, weakCompetencies: weak, stories: db.stories });
   const first = plan.questions[0];
   const session: SessionDetail = {
     id: newId("ses"),

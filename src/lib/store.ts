@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import type { AppConfig, Profile, SessionDetail, Settings, UserDb } from "./types";
+import type { AppConfig, FinderPrefs, Profile, SessionDetail, Settings, UserDb } from "./types";
 
 // Storage, with two interchangeable backends:
 //   • Local files (default): data/… next to the app. Zero setup; for running on a laptop.
@@ -161,6 +161,8 @@ export const DEFAULT_SETTINGS: Settings = {
     azureSpeech: "",
     azureRegion: "westeurope",
     tavus: "",
+    adzunaAppId: "",
+    adzunaAppKey: "",
   },
   models: { interviewer: "claude-opus-5-5", analysis: "claude-opus-5-5", verdict: "claude-opus-5-5" },
   effort: { interviewer: "low", analysis: "medium", verdict: "high" },
@@ -196,8 +198,22 @@ export const DEFAULT_PROFILE: Profile = {
   notes: "",
 };
 
+export const DEFAULT_FINDER_PREFS: FinderPrefs = {
+  keywords: "supply chain, logistics, procurement, demand planning, Einkauf, Logistik, Disposition",
+  cities: "",
+  includeRemote: true,
+  remoteOnly: false,
+  entryLevelOnly: true,
+  minScore: 45,
+};
+
 const emptyUserDb = (): UserDb => ({
   profile: DEFAULT_PROFILE,
+  finder: { prefs: DEFAULT_FINDER_PREFS, lastRun: "", lastRunNote: "", results: [] },
+  stories: [],
+  attempts: [],
+  debriefs: [],
+  phrases: [],
   resumes: [],
   jobs: [],
   jobReviews: [],
@@ -228,7 +244,13 @@ function normalizeApp(raw: Partial<AppConfig> | null): AppConfig {
 }
 
 function normalizeUser(raw: Partial<UserDb> | null): UserDb {
-  return { ...emptyUserDb(), ...(raw ?? {}), profile: mergeDefaults(DEFAULT_PROFILE, raw?.profile) };
+  const base = emptyUserDb();
+  return {
+    ...base,
+    ...(raw ?? {}),
+    profile: mergeDefaults(DEFAULT_PROFILE, raw?.profile),
+    finder: { ...base.finder, ...(raw?.finder ?? {}), prefs: mergeDefaults(DEFAULT_FINDER_PREFS, raw?.finder?.prefs) },
+  };
 }
 
 // ---------------- app config (shared) ----------------

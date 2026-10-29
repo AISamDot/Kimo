@@ -123,6 +123,7 @@ export function InterviewRoom(p: RoomProps) {
   };
 
   const begin = () => {
+    // eslint-disable-next-line react-hooks/purity -- runs in a click handler, not during render
     startAt.current = performance.now() - p.elapsedMs;
     runQuestion(currentQ.current);
   };
@@ -147,6 +148,7 @@ export function InterviewRoom(p: RoomProps) {
   };
 
   function onTick(t: Tick) {
+    // eslint-disable-next-line react-hooks/purity -- audio callback, not render
     const now = performance.now();
     if (now - lastTickUi.current > 100) {
       lastTickUi.current = now;

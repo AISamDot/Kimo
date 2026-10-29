@@ -48,6 +48,20 @@ export async function buildEvidence(uid: string) {
       competencyAverages5: Object.fromEntries(Object.entries(compAgg).map(([k, v]) => [k, Math.round((v.reduce((a, b) => a + b, 0) / v.length) * 10) / 10])),
       trend: done.map((s) => ({ date: s.createdAt.slice(0, 10), overall: s.overall, type: s.type, language: s.language })),
     },
+    realInterviewDebriefs: db.debriefs.slice(-8).map((d) => ({
+      company: db.applications.find((a) => a.id === d.applicationId)?.company ?? "",
+      stage: d.stage,
+      language: d.language,
+      feeling: d.feeling,
+      likelyVerdict: d.result.likelyVerdict,
+      redFlags: d.result.redFlags,
+      avgAnswerScore5: d.result.perQuestion.length ? Math.round((d.result.perQuestion.reduce((a, q) => a + q.score, 0) / d.result.perQuestion.length) * 10) / 10 : null,
+    })),
+    preparation: {
+      stories: db.stories.length,
+      quickDrillAttempts: db.attempts.length,
+      germanPhrases: db.phrases.length,
+    },
     openDrills: db.drills.filter((d) => d.status === "open").map((d) => d.title),
   };
 }

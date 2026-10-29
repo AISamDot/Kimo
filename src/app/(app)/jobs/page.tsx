@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { UploadForm } from "@/components/UploadForm";
-import { Card, Empty, PageHeader, Pill, ScoreBadge } from "@/components/ui";
+import { Card, Empty, LinkButton, PageHeader, Pill, ScoreBadge } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { readiness } from "@/lib/metrics";
 import { getSettings, readDb } from "@/lib/store";
@@ -11,7 +11,12 @@ export default async function JobsPage() {
   const settings = await getSettings();
   return (
     <div className="space-y-6">
-      <PageHeader title="Job ads" sub="Add the ads you applied to. Each one becomes a practice track: CV fit review, tailored interviews, and its own score trend." />
+      <PageHeader
+        eyebrow="Prepare"
+        title="Job ads"
+        sub="Add the ads you applied to. Each one becomes a practice track: CV fit review, prep pack, tailored interviews, and its own score trend."
+        action={<LinkButton href="/finder" variant="ghost" icon="search">Find new openings</LinkButton>}
+      />
       <div className="grid gap-6 lg:grid-cols-3">
         <Card title="Add a job ad">
           <UploadForm endpoint="/api/jobs" kind="job" allowUrl redirectBase="/jobs" />
@@ -25,7 +30,7 @@ export default async function JobsPage() {
               const r = readiness(sessions, settings.readiness);
               const best = Math.max(...db.jobReviews.filter((x) => x.jobId === j.id).map((x) => x.result.fitScore), -1);
               return (
-                <Link key={j.id} href={`/jobs/${j.id}`} className="block rounded-2xl border border-line bg-surface p-4 hover:border-accent">
+                <Link key={j.id} href={`/jobs/${j.id}`} className="block rounded-2xl border border-line bg-surface p-4 shadow-card transition hover:border-accent hover:shadow-lift">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
                       <div className="font-semibold">{j.parsed.title}</div>
@@ -40,6 +45,7 @@ export default async function JobsPage() {
                     <Pill>{sessions.length} session(s)</Pill>
                     {best >= 0 && <Pill tone={best >= 75 ? "good" : best >= 55 ? "warn" : "bad"}>CV fit {best}</Pill>}
                     {r.ready && <Pill tone="good">Interview-ready</Pill>}
+                    {j.prepPack && <Pill tone="signal">Prep pack ready</Pill>}
                   </div>
                 </Link>
               );

@@ -21,7 +21,9 @@ export function Avatar({ type, getLevel, listening }: { type: InterviewType; get
   const head = useRef<SVGGElement>(null);
   const look = LOOKS[type];
   const listenRef = useRef(listening);
-  listenRef.current = listening;
+  useEffect(() => {
+    listenRef.current = listening;
+  }, [listening]);
 
   useEffect(() => {
     let raf = 0;

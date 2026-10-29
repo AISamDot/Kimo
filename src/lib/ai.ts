@@ -6,6 +6,7 @@ import { QUESTION_BANK } from "./questionBank";
 import {
   COMPETENCIES,
   type Application,
+  type Debrief,
   type Difficulty,
   type GeneralReview,
   type InterviewLanguage,
@@ -18,6 +19,7 @@ import {
   type Resume,
   type ResumeParsed,
   type SessionPlan,
+  type Story,
   type Turn,
 } from "./types";
 
@@ -226,6 +228,7 @@ export async function planSession(args: {
   lengthMin: number;
   askedBefore: string[];
   weakCompetencies: string[];
+  stories?: Story[];
 }): Promise<SessionPlan> {
   const nMain = Math.max(3, Math.round(args.lengthMin / 2.7));
   const persona = PERSONAS[args.type];
@@ -244,6 +247,8 @@ ${resumeBrief(args.resume)}
 
 CANDIDATE PROFILE:
 ${profileText(args.profile)}
+
+${storiesText(args.stories ?? [])}
 
 ${args.review ? `CV-vs-JOB REVIEW (gaps to press on):\n${JSON.stringify({ risks: args.review.result.interviewRisks, requirements: args.review.result.requirements.filter((r) => r.status !== "clear") })}` : ""}
 
@@ -355,14 +360,16 @@ export async function scoreAnswer(args: {
   competency: string;
   kind: string;
   thread: Turn[];
-  job: Job;
+  job?: Job;
   resume: Resume;
+  stories?: Story[];
 }) {
   return llmJson(AnswerScoreZ, {
     role: "analysis",
     system: `${ROLE}\nYou are a calibrated interview assessor for supply-chain roles in Germany.\n\n${RUBRIC}`,
-    content: `ROLE: ${args.job.parsed.title} at ${args.job.parsed.company}. Must-haves: ${args.job.parsed.mustHave.join("; ")}
+    content: `ROLE: ${args.job ? `${args.job.parsed.title} at ${args.job.parsed.company}. Must-haves: ${args.job.parsed.mustHave.join("; ")}` : "General supply-chain role in Germany (planning/procurement/logistics)"}
 ${resumeBrief(args.resume)}
+${storiesText(args.stories ?? [])}
 
 QUESTION ${args.questionNo} (${args.kind}, competency ${args.competency}): ${args.question}
 
@@ -446,5 +453,83 @@ export async function feedbackEmail(app: Application, lang: Lang, candidateName:
     role: "analysis",
     system: "You write short, polite, professional emails for job seekers in Germany.",
     content: `Write a ${lang === "de" ? "German (formal Sie)" : "English"} email from ${candidateName || "the candidate"} to the recruiter at ${app.company} about the ${app.role} application (reached stage: ${app.stage}, outcome: ${app.outcome}). Thank them and ask for 2-3 sentences of honest feedback on what he could improve (CV, interview, German level). Under 120 words, no grovelling.`,
+  });
+}
+
+// ---------------- Story bank ----------------
+
+export function storiesText(stories: Story[]) {
+  if (!stories.length) return "";
+  return `HIS STORY BANK (real STAR stories he has prepared; model answers and prep should reuse these):\n${stories
+    .map((s) => `- [${s.competencies.join(", ")}] ${s.title}: S: ${s.situation} T: ${s.task} A: ${s.action} R: ${s.result} ${s.metrics}`)
+    .join("\n")}`;
+}
+
+const StoriesZ = z.object({
+  stories: z.array(
+    z.object({
+      title: z.string().describe("Short memorable name, e.g. 'Supplier delay at X'"),
+      situation: z.string(),
+      task: z.string(),
+      action: z.string().describe("HIS personal actions, first person, concrete steps"),
+      result: z.string().describe("Outcome; use [X] placeholders where he must supply a real number"),
+      metrics: z.string().describe("Numbers he should confirm or find, e.g. '[X]% OTIF, [X] SKUs'"),
+      competencies: z.array(Comp).describe("1-3 competencies this story proves"),
+      answersQuestions: z.array(z.string()).describe("3-4 interview questions this story answers"),
+    }),
+  ),
+});
+
+export async function mineStories(resume: Resume, profile: Profile, existing: Story[]) {
+  const out = await llmJson(StoriesZ, {
+    role: "analysis",
+    system: `${ROLE}\nYou are an interview coach who turns CV lines into reusable STAR stories. Never invent events: build each story only from what the CV states, and mark anything he must fill in with [X] or [describe ...].`,
+    content: `${resumeBrief(resume)}\n\nCANDIDATE PROFILE:\n${profileText(profile)}\n\n${existing.length ? `STORIES HE ALREADY HAS (do not duplicate):\n${existing.map((s) => `- ${s.title}`).join("\n")}\n\n` : ""}Draft 6-10 STAR stories covering as many of these competencies as his CV allows: stakeholder management, problem solving, data & analysis, supply-chain planning, procurement/suppliers, logistics/operations, ERP/tools, ownership, communication, motivation. Prefer stories with numbers and personal decisions.`,
+  });
+  return out.stories;
+}
+
+// ---------------- Prep pack ----------------
+
+const PrepZ = z.object({
+  pitchEn: z.string().describe("60-second 'tell me about yourself' in English, tailored to this ad, first person"),
+  pitchDe: z.string().describe("The same pitch in natural spoken German (Sie-context), at B1-B2 level so he can actually say it"),
+  whyThisCompany: z.string().describe("A specific, honest answer to 'why us / why this role' using the ad"),
+  topQuestions: z.array(
+    z.object({ q: z.string(), why: z.string().describe("Why they will ask it"), story: z.string().describe("Which of his stories to use (title) or what to say"), keyPoints: z.array(z.string()) }),
+  ).describe("The 8 most likely questions for this ad"),
+  salaryScript: z.string().describe("What to say when asked about salary: a researched range for this role/city/seniority in Germany (gross per year) and how to phrase it"),
+  visaScript: z.string().describe("A confident 2-3 sentence answer about work permit/visa (e.g. §20 job-seeker after studies, EU Blue Card eligibility); based on his profile; no legal advice beyond the basics"),
+  germanAnswerScript: z.string().describe("How to answer 'How good is your German?' honestly and positively, with a sentence in German"),
+  questionsToAsk: z.array(z.string()).describe("4-5 smart questions for the interviewer"),
+  germanPhrases: z.array(z.object({ de: z.string(), en: z.string() })).describe("10-14 German phrases specific to this job's daily work and interview"),
+  avoid: z.array(z.string()).describe("3-5 things NOT to say for this role (based on his past mistakes if given)"),
+  checklist: z.array(z.string()).describe("Day-before checklist, 5-8 items"),
+});
+
+export async function buildPrepPack(args: { job: Job; resume: Resume; profile: Profile; stories: Story[]; review: JobReview | null; weakPoints: string[] }) {
+  return llmJson(PrepZ, {
+    role: "analysis",
+    system: `${ROLE}\nYou prepare a candidate for a specific real interview in Germany. Everything must be usable as-is: short, spoken, specific to this company and his real background. Never invent experience; use [X] placeholders.`,
+    content: `${jobBrief(args.job)}\n\n${resumeBrief(args.resume)}\n\nCANDIDATE PROFILE:\n${profileText(args.profile)}\n\n${storiesText(args.stories)}\n\n${args.review ? `CV-vs-JOB REVIEW RISKS:\n${args.review.result.interviewRisks.join("\n")}` : ""}\n\nWEAK POINTS FROM HIS MOCK INTERVIEWS:\n${args.weakPoints.join("\n") || "none recorded yet"}\n\nBuild the prep pack.`,
+  });
+}
+
+// ---------------- Real-interview debrief ----------------
+
+const DebriefZ = z.object({
+  summary: z.string().describe("Honest 3-4 sentence read of how the real interview probably went"),
+  likelyVerdict: z.enum(["strong_no", "no", "lean_yes", "yes"]),
+  perQuestion: z.array(z.object({ q: z.string(), score: s15, assessment: z.string(), betterAnswer: z.string().describe("A stronger answer from his real background, 60-120 words, in the question's language") })),
+  redFlags: z.array(z.string()).describe("Things he said or did that commonly cause rejection"),
+  whatToPractise: z.array(z.string()).describe("3 concrete things to practise before the next real interview"),
+});
+
+export async function assessDebrief(args: { debrief: Omit<Debrief, "id" | "createdAt" | "result">; app: Application | undefined; job: Job | undefined; resume: Resume | undefined; stories: Story[] }) {
+  const d = args.debrief;
+  return llmJson(DebriefZ, {
+    role: "verdict",
+    system: `${ROLE}\nHe just had a REAL interview and wrote down, from memory, what was asked and what he answered. Assess it like the interviewer would have. His notes are a paraphrase, so judge content and approach, not wording. Be kind but honest.`,
+    content: `${args.job ? jobBrief(args.job) : `ROLE: ${args.app?.role ?? "?"} at ${args.app?.company ?? "?"}`}\n\n${args.resume ? resumeBrief(args.resume) : ""}\n\n${storiesText(args.stories)}\n\nINTERVIEW: stage ${d.stage}, language ${d.language}, interviewers: ${d.interviewers || "?"}; his feeling ${d.feeling}/5.\nHIS NOTES: ${d.notes || "-"}\n\nQUESTIONS AND HIS ANSWERS:\n${d.questions.map((q, i) => `${i + 1}. Q: ${q.q}\n   His answer: ${q.myAnswer || "(not noted)"}`).join("\n")}`,
   });
 }

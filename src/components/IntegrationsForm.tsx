@@ -15,6 +15,7 @@ const SERVICES: Svc[] = [
   { id: "hume", keyField: "hume", name: "Hume AI", use: "Optional: how your voice may come across (vocal expression).", url: "https://platform.hume.ai/settings/keys" },
   { id: "azure", keyField: "azureSpeech", name: "Azure AI Speech", use: "Optional: pronunciation scores for German/English answers.", url: "https://portal.azure.com/#create/Microsoft.CognitiveServicesSpeechServices" },
   { id: "tavus", keyField: "tavus", name: "Tavus", use: "Optional: realistic video interviewer (most expensive part).", url: "https://platform.tavus.io/api-keys" },
+  { id: "adzuna", keyField: "adzunaAppKey", name: "Adzuna (free)", use: "Optional: more openings in the Job finder (free developer key). Arbeitnow works without a key.", url: "https://developer.adzuna.com/signup" },
 ];
 
 export function IntegrationsForm({ initial, allowSignups, isAdmin }: { initial: Settings; allowSignups: boolean; isAdmin: boolean }) {
@@ -72,11 +73,11 @@ export function IntegrationsForm({ initial, allowSignups, isAdmin }: { initial: 
 
   return (
     <div className="space-y-6">
-      {!isAdmin && <p className="rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted">Only the admin can change integrations. You can see what's connected.</p>}
+      {!isAdmin && <p className="rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted">Only the admin can change integrations. You can see what’s connected.</p>}
 
       <section className="rounded-2xl border border-line bg-surface p-5">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">API keys</h2>
-        <p className="mt-1 text-xs text-muted">Keys are stored on this app's server (its data folder or database) and are never sent to the browser. “Test” calls a free endpoint of each service (no usage charge).</p>
+        <p className="mt-1 text-xs text-muted">Keys are stored on this app’s server (its data folder or database) and are never sent to the browser. “Test” calls a free endpoint of each service (no usage charge).</p>
         <div className="mt-4 divide-y divide-line">
           {SERVICES.map((svc) => {
             const t = tests[svc.id];
@@ -102,6 +103,17 @@ export function IntegrationsForm({ initial, allowSignups, isAdmin }: { initial: 
                       value={keys[svc.keyField] ?? ""}
                       onChange={(e) => setKeys((k) => ({ ...k, [svc.keyField]: e.target.value }))}
                     />
+                    {svc.id === "adzuna" && (
+                      <input
+                        className="field w-40"
+                        type="password"
+                        autoComplete="off"
+                        disabled={dis}
+                        placeholder={has("adzunaAppId") ? `App ID saved (${initial.keys.adzunaAppId})` : "App ID"}
+                        value={keys.adzunaAppId ?? ""}
+                        onChange={(e) => setKeys((k) => ({ ...k, adzunaAppId: e.target.value }))}
+                      />
+                    )}
                     {svc.id === "azure" && (
                       <input
                         className="field w-36"
@@ -250,7 +262,7 @@ export function IntegrationsForm({ initial, allowSignups, isAdmin }: { initial: 
             </label>
           ))}
         </div>
-        <p className="mt-2 text-xs text-muted">Weights are relative (they don't need to add up to 100). Raise Language if the target jobs need C1 German.</p>
+        <p className="mt-2 text-xs text-muted">Weights are relative (they don’t need to add up to 100). Raise Language if the target jobs need C1 German.</p>
       </section>
 
       <section className="rounded-2xl border border-line bg-surface p-5">

@@ -2,6 +2,7 @@
 // language and presence, then writes the coaching report and updates drills.
 import { assessLanguage, scoreAnswer, writeReport } from "./ai";
 import { friendlyError } from "./llm";
+import { mergePhrases, today } from "./practice";
 import {
   competencyScores,
   computeDelivery,
@@ -112,7 +113,7 @@ async function runAnalysis(uid: string, sessionId: string) {
   const threads = groupThreads(s);
   if (!threads.length) throw new Error("No answers were recorded in this session, so there is nothing to score.");
   const scored = await mapLimit(threads, 4, async (th) => {
-    const r = await scoreAnswer({ ...th, thread: th.turns, job, resume });
+    const r = await scoreAnswer({ ...th, thread: th.turns, job, resume, stories: db.stories });
     const a: AnswerScore = { questionNo: th.questionNo, question: th.question, competency: th.competency, ...r };
     return a;
   });
@@ -284,6 +285,18 @@ async function runAnalysis(uid: string, sessionId: string) {
         dr.status = "passed";
         dr.passedAt = new Date().toISOString();
       }
+    }
+    // German corrections and missing phrases go straight into the phrase trainer.
+    if (language?.lang === "de") {
+      const now = new Date().toISOString();
+      mergePhrases(
+        d.phrases,
+        [
+          ...language.corrections.map((c) => ({ id: newId("phr"), de: c.better, en: "", note: `You said: “${c.said}”`, source: "session" as const, createdAt: now })),
+          ...language.phrasesToPractice.map((p) => ({ id: newId("phr"), de: p.phrase, en: p.meaning, note: "", source: "session" as const, createdAt: now })),
+        ],
+        today(),
+      );
     }
   });
 

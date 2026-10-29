@@ -352,6 +352,9 @@ export async function testKey(service: string): Promise<{ ok: boolean; message: 
       case "tavus":
         if (!k.tavus) return { ok: false, message: "No key saved" };
         return run("https://tavusapi.com/v2/replicas?limit=1", { "x-api-key": k.tavus });
+      case "adzuna":
+        if (!k.adzunaAppKey || !k.adzunaAppId) return { ok: false, message: "Save both the app ID and the app key" };
+        return run(`https://api.adzuna.com/v1/api/jobs/de/search/1?app_id=${encodeURIComponent(k.adzunaAppId)}&app_key=${encodeURIComponent(k.adzunaAppKey)}&results_per_page=1`, {});
       default:
         return { ok: false, message: "Unknown service" };
     }

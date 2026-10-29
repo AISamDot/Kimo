@@ -14,7 +14,7 @@ export default async function ApplicationsPage() {
   const max = Math.max(1, rows[0].reached);
   return (
     <div className="space-y-6">
-      <PageHeader title="Real applications" sub="Log every real application and how far it got. This funnel is the hardest evidence of where you're dropping out." />
+      <PageHeader eyebrow="Track" title="Real applications" sub="Log every real application and how far it got. This funnel is the hardest evidence of where you're dropping out." />
       {db.applications.length > 0 && (
         <Card title="Your funnel">
           <div className="space-y-2">

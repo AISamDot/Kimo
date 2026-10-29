@@ -45,6 +45,7 @@ function Form({
       <label className="text-xs text-muted">Company<input className="field mt-1" value={value.company ?? ""} onChange={set("company")} /></label>
       <label className="text-xs text-muted">Role<input className="field mt-1" value={value.role ?? ""} onChange={set("role")} /></label>
       <label className="text-xs text-muted">Date applied<input type="date" className="field mt-1" value={value.date ?? ""} onChange={set("date")} /></label>
+      <label className="text-xs text-muted">Next interview date<input type="date" className="field mt-1" value={value.nextInterviewDate ?? ""} onChange={set("nextInterviewDate")} /></label>
       <label className="text-xs text-muted">
         Furthest stage reached
         <select className="field mt-1" value={value.stage} onChange={set("stage")}>
@@ -175,6 +176,7 @@ export function ApplicationsEditor({
                     <div className="font-medium">{a.company} — {a.role}</div>
                     <div className="text-muted">
                       {a.date} · reached {STAGE_LABELS[a.stage]} · {OUTCOMES.find((o) => o[0] === a.outcome)?.[1]}
+                      {a.nextInterviewDate && a.outcome === "active" && <span className="ml-2 rounded-full bg-signal-soft px-2 py-0.5 text-xs font-medium text-warn">Next interview {a.nextInterviewDate}</span>}
                       {a.interviewLanguage ? ` · interview in ${a.interviewLanguage.toUpperCase()}` : ""}
                     </div>
                     {a.feedback && <div className="text-muted italic">“{a.feedback}”</div>}
