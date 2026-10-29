@@ -57,7 +57,7 @@ export function AuthForm({ mode, firstUser, signupsOpen }: { mode: "login" | "si
             ))}
           </ul>
         </div>
-        <p className="text-xs text-white/50">Private by design · your data stays in your own deployment</p>
+        <p className="text-sm text-white/70">Made by Hossam with Love ❤️</p>
       </aside>
       <div className="flex items-center justify-center px-4 py-10">
         <div className="w-full max-w-sm">
@@ -125,6 +125,7 @@ export function AuthForm({ mode, firstUser, signupsOpen }: { mode: "login" | "si
               </>
             )}
           </p>
+          <p className="mt-10 text-center text-xs text-muted lg:hidden">Made by Hossam with Love ❤️</p>
         </div>
       </div>
     </div>
