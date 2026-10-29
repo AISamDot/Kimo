@@ -98,6 +98,36 @@ export function FinderView({
               <input type="range" min={0} max={80} step={5} className="mt-3 w-full accent-[#e59a2f]" value={prefs.minScore} onChange={(e) => setPrefs({ ...prefs, minScore: Number(e.target.value) })} />
             </label>
             <div className="sm:col-span-2 lg:col-span-3">
+              <div className="text-xs font-medium text-white/75">Language the job may require</div>
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {(
+                  [
+                    ["none", "English only"],
+                    ["A1", "German up to A1"],
+                    ["A2", "up to A2"],
+                    ["B1", "up to B1"],
+                    ["B2", "up to B2"],
+                    ["any", "Any"],
+                  ] as const
+                ).map(([v, l]) => (
+                  <button
+                    key={v}
+                    onClick={() => setPrefs({ ...prefs, maxGerman: v })}
+                    className={`rounded-full border px-3 py-1 text-sm transition ${prefs.maxGerman === v ? "border-[#e59a2f] bg-[#e59a2f] text-[#0f2a24]" : "border-white/30 text-white/85 hover:bg-white/10"}`}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1.5 text-xs text-white/70">
+                {prefs.maxGerman === "none"
+                  ? "Only jobs that don't ask for German."
+                  : prefs.maxGerman === "any"
+                    ? "No language filter."
+                    : `Hides jobs asking for German above ${prefs.maxGerman} (e.g. C1, fluent, native). Jobs that don't mention German are kept.`}
+              </p>
+            </div>
+            <div className="sm:col-span-2 lg:col-span-3">
               <div className="text-xs font-medium text-white/75">Regions</div>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {REGION_IDS.map((r) => {
@@ -230,7 +260,8 @@ function JobRow({
               </Pill>
             )}
             <Pill tone={j.fit.seniority === "entry" ? "good" : j.fit.seniority === "senior" ? "bad" : "neutral"}>{j.fit.seniority === "entry" ? "Entry level" : j.fit.seniority === "senior" ? "Senior" : "Mid level"}</Pill>
-            {j.fit.germanNeeded !== "unknown" && <Pill tone={j.fit.germanGap === 0 ? "good" : j.fit.germanGap === 1 ? "warn" : "bad"}>German {j.fit.germanNeeded}</Pill>}
+            {j.fit.germanNeeded === "none" && <Pill tone="good">No German needed</Pill>}
+            {j.fit.germanNeeded !== "unknown" && j.fit.germanNeeded !== "none" && <Pill tone={j.fit.germanGap === 0 ? "good" : j.fit.germanGap === 1 ? "warn" : "bad"}>German {j.fit.germanNeeded}</Pill>}
             {j.fit.matched.slice(0, 4).map((m) => (
               <Pill key={m} tone="accent">{m}</Pill>
             ))}

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { APIFY_EVERY_MS, apifyIndeed, apifyLinkedIn } from "./apify";
 import { htmlToText, isRemote, localFit, outsideGermany, remoteFromGermany } from "./jobfit";
 import { llmJson } from "./llm";
+import { cefrIndex } from "./metrics";
 import { getSettings, readDb, updateDb } from "./store";
 import type { FinderPrefs, FinderSource, FoundJob, Profile, Resume } from "./types";
 
@@ -96,8 +97,17 @@ async function adzuna(prefs: FinderPrefs, appId: string, appKey: string): Promis
   return out;
 }
 
+/** Language filter: jobs that don't mention German always pass; otherwise the level must be within his limit. */
+export function germanOk(needed: string | undefined, max: FinderPrefs["maxGerman"] = "B2") {
+  if (max === "any" || !needed || needed === "none" || needed === "unknown") return true;
+  if (max === "none") return false;
+  const need = cefrIndex(needed);
+  return need < 0 || need <= cefrIndex(max);
+}
+
 export function passesFilters(j: Raw & { fit: FoundJob["fit"] }, prefs: FinderPrefs) {
   if (prefs.remoteOnly && !j.remote) return false;
+  if (!germanOk(j.fit.germanNeeded, prefs.maxGerman)) return false;
   if (prefs.entryLevelOnly && j.fit.seniority === "senior") return false;
   const regions = prefs.regions?.length ? prefs.regions : ["germany"];
   if (j.region && j.region !== "germany") {

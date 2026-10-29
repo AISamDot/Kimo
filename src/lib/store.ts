@@ -210,6 +210,7 @@ export const DEFAULT_FINDER_PREFS: FinderPrefs = {
   entryLevelOnly: true,
   minScore: 45,
   regions: ["germany"],
+  maxGerman: "B2",
 };
 
 const emptyUserDb = (): UserDb => ({

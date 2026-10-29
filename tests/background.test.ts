@@ -18,6 +18,7 @@ const prefs = (over: Partial<FinderPrefs> = {}): FinderPrefs => ({
   entryLevelOnly: true,
   minScore: 40,
   regions: ["germany"],
+  maxGerman: "B2",
   ...over,
 });
 
@@ -59,7 +60,7 @@ describe("adzunaPlan", () => {
 describe("region filters", () => {
   const job = (over: Partial<FoundJob>) => ({
     id: "x", source: "linkedin" as const, title: "Supply Chain Analyst", company: "Co", location: "Dubai", remote: false, url: "https://x", description: "", postedAt: "", salary: "",
-    fit: { score: 70, domain: 0, skills: 0, seniority: "entry" as const, german: "none" as const, matched: [], reasons: [], flags: [] },
+    fit: { score: 70, domain: 0, skills: 0, seniority: "entry" as const, germanNeeded: "unknown", germanGap: 0, matched: [], reasons: [], flags: [] },
     ...over,
   });
   it("keeps abroad jobs only for chosen regions", async () => {
@@ -68,6 +69,24 @@ describe("region filters", () => {
     expect(passesFilters(job({ region: "gcc" }) as never, prefs({ regions: ["germany"] }))).toBe(false);
     expect(passesFilters(job({ location: "Hamburg", source: "arbeitnow" as never }) as never, prefs({ regions: ["gcc"] }))).toBe(false);
     expect(passesFilters(job({ location: "Hamburg", source: "arbeitnow" as never }) as never, prefs())).toBe(true);
+  });
+});
+
+describe("language filter", () => {
+  it("keeps English-only and up-to-limit German jobs", async () => {
+    const { germanOk } = await import("@/lib/finder");
+    expect(germanOk("unknown", "none")).toBe(true);
+    expect(germanOk("none", "none")).toBe(true);
+    expect(germanOk("A2", "none")).toBe(false);
+    expect(germanOk("B2", "B2")).toBe(true);
+    expect(germanOk("C1", "B2")).toBe(false);
+    expect(germanOk("B2", "B1")).toBe(false);
+    expect(germanOk("C2", "any")).toBe(true);
+  });
+  it("spots ads that say German isn't needed", async () => {
+    const { germanRequirement } = await import("@/lib/jobfit");
+    expect(germanRequirement("Fluent English. No German required.")).toBe("none");
+    expect(germanRequirement("Deutschkenntnisse sind nicht erforderlich")).toBe("none");
   });
 });
 

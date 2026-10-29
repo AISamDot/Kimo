@@ -33,6 +33,7 @@ export const POST = handle(async (req: Request) => {
         remoteOnly: typeof p.remoteOnly === "boolean" ? p.remoteOnly : cur.remoteOnly,
         entryLevelOnly: typeof p.entryLevelOnly === "boolean" ? p.entryLevelOnly : cur.entryLevelOnly,
         minScore: Number.isFinite(p.minScore) ? Math.min(90, Math.max(0, Math.round(p.minScore!))) : cur.minScore,
+        maxGerman: ["none", "A1", "A2", "B1", "B2", "any"].includes(p.maxGerman as string) ? p.maxGerman! : cur.maxGerman,
         regions: Array.isArray(p.regions) ? (p.regions.filter(isRegionId) as FinderPrefs["regions"]) : cur.regions,
       };
     });

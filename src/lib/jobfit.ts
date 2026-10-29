@@ -28,6 +28,7 @@ export function germanRequirement(text: string): string {
   const t = norm(text);
   const explicit = t.match(/deutsch[^.\n]{0,60}?\b([abc][12])\b|\b([abc][12])\b[^.\n]{0,40}deutsch|german[^.\n]{0,40}?\b([abc][12])\b|\b([abc][12])\b[^.\n]{0,30}german/);
   if (explicit) return (explicit[1] || explicit[2] || explicit[3] || explicit[4]).toUpperCase();
+  if (/(no german (is )?(required|needed|necessary)|german (language )?(is )?not (required|needed|necessary)|without german|deutschkenntnisse (sind )?nicht erforderlich|keine deutschkenntnisse)/.test(t)) return "none";
   if (/(verhandlungssicher|fließend|fliessend|muttersprach|native german|fluent german|fluent in german|business fluent german|exzellente deutsch|sehr gute deutsch|sehr gute kenntnisse der deutschen)/.test(t)) return "C1";
   if (/(gute deutschkenntnisse|good german|gute kenntnisse der deutschen|german skills|deutschkenntnisse)/.test(t)) return "B2";
   if (/(german is a plus|german is an advantage|basic german|grundkenntnisse)/.test(t)) return "A2";
@@ -105,7 +106,7 @@ export function localFit(
   const his = cefrIndex(profile.germanLevel);
   const need = cefrIndex(germanNeeded);
   const germanGap = his >= 0 && need >= 0 ? Math.max(0, need - his) : 0;
-  const germanScore = need < 0 ? 75 : his < 0 ? 60 : germanGap === 0 ? 100 : germanGap === 1 ? 45 : 5;
+  const germanScore = germanNeeded === "none" ? 100 : need < 0 ? 75 : his < 0 ? 60 : germanGap === 0 ? 100 : germanGap === 1 ? 45 : 5;
   if (need >= 0 && his >= 0 && germanGap === 0) reasons.push(`Your German (${profile.germanLevel}) meets ${germanNeeded}`);
   if (germanGap === 1) flags.push(`Needs German ${germanNeeded}; you're one level below`);
   if (germanGap >= 2) flags.push(`Needs German ${germanNeeded}; a big gap from ${profile.germanLevel}`);

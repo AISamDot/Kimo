@@ -512,7 +512,7 @@ export interface LocalFit {
   domain: number;
   skills: number;
   seniority: "entry" | "mid" | "senior" | "unknown";
-  germanNeeded: string; // CEFR or "unknown"
+  germanNeeded: string; // CEFR, "none" (ad says no German needed) or "unknown" (not mentioned)
   germanGap: number; // levels short (0 = meets)
   matched: string[];
   reasons: string[];
@@ -548,6 +548,8 @@ export interface FinderPrefs {
   minScore: number;
   /** Germany is covered by the free boards; other regions need the Apify scrape. */
   regions: ("germany" | "europe" | "gcc" | "asia" | "africa")[];
+  /** Highest German level a job may ask for: "none" = English-only jobs. */
+  maxGerman: "none" | "A1" | "A2" | "B1" | "B2" | "any";
 }
 
 export interface Finder {
