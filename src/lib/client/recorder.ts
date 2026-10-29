@@ -26,7 +26,18 @@ export interface Tick {
   silenceMs: number;
   elapsedMs: number;
   speechElapsedMs: number;
+  voicedMs: number; // total time he has actually been speaking this answer
 }
+
+/** Rolling noise floor: a low percentile of recent loudness, so steady room noise (fans, traffic) is ignored. */
+export function noiseFloor(recent: number[]) {
+  if (!recent.length) return -55;
+  const sorted = [...recent].sort((a, b) => a - b);
+  return Math.max(-75, Math.min(-30, sorted[Math.floor(sorted.length * 0.15)]));
+}
+
+/** Voice must clear the floor by this much (dB), within sane absolute limits. */
+export const voiceThreshold = (floor: number) => Math.min(-25, Math.max(-52, floor + 10));
 
 export interface Answer {
   wav: Blob;
@@ -38,7 +49,9 @@ export interface Answer {
 export class Recorder {
   ctx!: AudioContext;
   private node!: AudioWorkletNode;
-  private floor = -55;
+  private recent: number[] = []; // last ~3 s of chunk loudness (dB)
+  private run = 0; // consecutive voiced chunks
+  private voicedMs = 0;
   private recording = false;
   private chunks: Float32Array[] = [];
   private frames: Frame[] = [];
@@ -62,34 +75,37 @@ export class Recorder {
     return this.ctx.sampleRate;
   }
 
-  private threshold() {
-    return Math.min(-30, Math.max(-52, this.floor + 11));
-  }
-
   private onChunk(x: Float32Array) {
     const db = rmsDb(x);
-    const voiced = db > this.threshold();
+    const chunkMs = (x.length / this.ctx.sampleRate) * 1000;
+    this.recent.push(db);
+    if (this.recent.length > Math.round(3000 / chunkMs)) this.recent.shift();
+    const voiced = db > voiceThreshold(noiseFloor(this.recent));
+    this.run = voiced ? this.run + 1 : 0;
+    // A click, breath or tap is one chunk; real speech lasts at least ~90 ms.
+    const speech = this.run >= 2;
     this.level = Math.max(0, Math.min(1, (db + 60) / 45));
-    if (!voiced) this.floor = this.floor * 0.97 + Math.max(-75, Math.min(-35, db)) * 0.03;
     const now = performance.now();
     if (!this.recording) {
-      this.onTick({ level: this.level, speaking: voiced, speechStarted: false, silenceMs: 0, elapsedMs: 0, speechElapsedMs: 0 });
+      this.onTick({ level: this.level, speaking: speech, speechStarted: false, silenceMs: 0, elapsedMs: 0, speechElapsedMs: 0, voicedMs: 0 });
       return;
     }
     this.chunks.push(x);
     const t = (now - this.startedAt) / 1000;
     this.frames.push({ t, db, voiced, pitch: voiced ? estimatePitch(x, this.ctx.sampleRate) : 0 });
-    if (voiced) {
+    if (speech) {
       if (!this.firstVoiceAt) this.firstVoiceAt = now;
       this.lastVoiceAt = now;
+      this.voicedMs += chunkMs;
     }
     this.onTick({
       level: this.level,
-      speaking: voiced,
+      speaking: speech,
       speechStarted: !!this.firstVoiceAt,
       silenceMs: this.firstVoiceAt ? now - this.lastVoiceAt : 0,
       elapsedMs: now - this.startedAt,
       speechElapsedMs: this.firstVoiceAt ? now - this.firstVoiceAt : 0,
+      voicedMs: this.voicedMs,
     });
   }
 
@@ -98,6 +114,8 @@ export class Recorder {
     this.frames = [];
     this.firstVoiceAt = 0;
     this.lastVoiceAt = 0;
+    this.voicedMs = 0;
+    this.run = 0;
     this.startedAt = performance.now();
     this.recording = true;
   }

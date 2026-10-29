@@ -30,6 +30,9 @@ export interface RoomProps {
 
 type Phase = "intro" | "ready" | "speaking" | "listening" | "thinking" | "paused" | "error" | "ending";
 
+/** Auto-send needs at least this much actual speech, so a cough or "uh" doesn't end the answer. */
+const MIN_SPEECH_MS = 1200;
+
 export function InterviewRoom(p: RoomProps) {
   const router = useRouter();
   const [phase, _setPhase] = useState<Phase>("intro");
@@ -156,7 +159,8 @@ export function InterviewRoom(p: RoomProps) {
       if (stt.current && phaseRef.current === "listening") setCaption(stt.current.peek());
     }
     if (phaseRef.current !== "listening") return;
-    if (t.speechStarted && t.silenceMs >= p.config.silenceMs) submitAnswer(false);
+    // Auto-send once he has said something real (not just a cough) and then paused.
+    if (t.speechStarted && t.voicedMs >= MIN_SPEECH_MS && t.silenceMs >= p.config.silenceMs) submitAnswer(false);
     else if (p.type === "pressure" && t.speechElapsedMs > p.config.pressureMaxAnswerSec * 1000) submitAnswer(true);
   }
 
@@ -380,6 +384,14 @@ export function InterviewRoom(p: RoomProps) {
                 </div>
                 <span className="w-14 text-right text-xs tabular-nums text-muted">{mmss(tick?.speechElapsedMs ?? 0)}</span>
               </div>
+              {tick && tick.speechStarted && tick.voicedMs >= MIN_SPEECH_MS && tick.silenceMs > 700 && (
+                <div className="flex items-center gap-2 text-xs text-accent">
+                  <div className="h-1 w-24 overflow-hidden rounded-full bg-accent-soft">
+                    <div className="h-full bg-accent" style={{ width: `${Math.min(100, (tick.silenceMs / p.config.silenceMs) * 100)}%` }} />
+                  </div>
+                  Sending in {Math.max(1, Math.ceil((p.config.silenceMs - tick.silenceMs) / 1000))}s… keep talking to continue
+                </div>
+              )}
               {caption && <p className="text-sm text-muted italic">“{caption}”</p>}
               {tick && !tick.speechStarted && tick.elapsedMs > 15000 && <p className="text-xs text-muted">Take your time. Start speaking whenever you’re ready.</p>}
             </>
